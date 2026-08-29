@@ -16,7 +16,8 @@
     "postProcessing": "後処理",
     "history": "履歴",
     "debug": "デバッグ",
-    "about": "概要"
+    "about": "概要",
+    "navigation": "Settings sections"
   },
   "onboarding": {
     "subtitle": "開始するには、文字起こしのモデルを選択してください",
@@ -152,7 +153,24 @@
     },
     "cancel": "キャンセル",
     "cancelDownload": "ダウンロードをキャンセル",
-    "legacy": "旧式"
+    "legacy": "旧式",
+    "source": "Source",
+    "openSource": "Open model source",
+    "sourceDetails": {
+      "label": "Download source",
+      "huggingFace": "Hugging Face: {{repository}} @ {{revision}}",
+      "directUrl": "Direct URL: {{url}}",
+      "customUrl": "Custom URL: {{url}}",
+      "localFile": "Imported file: {{filename}}",
+      "overridden": "Custom source",
+      "change": "Change",
+      "urlLabel": "Replacement download URL",
+      "urlPlaceholder": "https://models.example/model.gguf",
+      "help": "This changes where LocalDictate downloads this exact model file next time. Catalog checksums still apply, and mismatched files are rejected.",
+      "save": "Use this source",
+      "saving": "Saving...",
+      "restore": "Restore default source"
+    }
   },
   "settings": {
     "modelSettings": {
@@ -176,6 +194,33 @@
       "rescan": {
         "label": "再スキャン",
         "tooltip": "Handy を使わずに models フォルダーまたは Hugging Face キャッシュに追加されたモデルを再スキャンします"
+      },
+      "sources": {
+        "title": "Where models come from",
+        "description": "Catalog models come from pinned revisions in the handy-computer organization on Hugging Face. If Hugging Face is unavailable, LocalDictate tries blob.handy.computer. Catalog files are SHA-256 verified. Every model below lists its exact repository, and you can replace its download URL.",
+        "catalog": "Primary catalog: huggingface.co/handy-computer",
+        "mirror": "Fallback mirror: blob.handy.computer",
+        "changeSuccess": "Model source updated",
+        "changeError": "Model source could not be updated",
+        "restoreSuccess": "Default source restored",
+        "restoreError": "Default source could not be restored"
+      },
+      "custom": {
+        "title": "Use your own model",
+        "description": "Import a local model or link a direct download. LocalDictate supports transcribe.cpp-compatible .gguf and .bin speech models; translation is available when the model advertises it. Each catalog model also shows its download source.",
+        "import": "Import file",
+        "importing": "Importing…",
+        "importDialogTitle": "Import a transcription model",
+        "supportedFiles": "Speech model files",
+        "importSuccess": "Model imported",
+        "importError": "Model could not be imported",
+        "link": "Link URL",
+        "urlLabel": "Direct model download URL",
+        "urlPlaceholder": "https://example.com/speech-model.gguf",
+        "add": "Download model",
+        "linking": "Downloading…",
+        "linkSuccess": "Model linked and downloaded",
+        "linkError": "Model could not be linked"
       }
     },
     "general": {
@@ -398,7 +443,10 @@
         "title": "API (OpenAI 互換)",
         "provider": {
           "title": "プロバイダー",
-          "description": "OpenAI 互換のプロバイダーを選択。"
+          "description": "OpenAI 互換のプロバイダーを選択。",
+          "source": "Connection",
+          "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "appleConnection": "On-device Apple Intelligence"
         },
         "appleIntelligence": {
           "unavailable": "このデバイスでは Apple Intelligence を利用できません。macOS Tahoe (26.0) 以降を実行し、システム設定で Apple Intelligence が有効になっている Apple Silicon Mac が必要です。"
@@ -419,7 +467,20 @@
           "descriptionDefault": "選択したプロバイダーが提供するモデルを選択。",
           "placeholderWithOptions": "モデルを検索または選択",
           "placeholderNoOptions": "モデル名を入力",
-          "refreshModels": "モデルを更新"
+          "refreshModels": "モデルを更新",
+          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
+          "placeholderCodex": "subscription_default or a Codex model ID"
+        },
+        "description": "Cleanup models are not downloaded by LocalDictate. Transcript text is sent to the selected local CLI or API endpoint. Choose Local or OpenAI-compatible to use Ollama, LM Studio, OpenRouter, or another compatible service.",
+        "codex": {
+          "checking": "Checking the local Codex CLI…",
+          "ready": "Ready — signed in to Codex with ChatGPT.",
+          "notInstalled": "Codex CLI was not found. Install it, then run codex login.",
+          "notAuthenticated": "Codex CLI is not signed in. Run codex login and choose ChatGPT.",
+          "nonChatgptAuthentication": "Codex is using API-key authentication. Run codex logout, then codex login and choose ChatGPT so this uses your subscription.",
+          "error": "LocalDictate could not verify Codex. Raw dictation still works.",
+          "privacy": "Raw dictation stays on this PC. Polished dictation sends only the transcript and cleanup instructions to OpenAI through your signed-in Codex CLI. If cleanup fails, LocalDictate pastes the raw transcript.",
+          "refresh": "Check again"
         }
       },
       "prompts": {
@@ -435,13 +496,34 @@
         "promptLabelPlaceholder": "プロンプト名を入力",
         "promptInstructions": "プロンプトの指示",
         "promptInstructionsPlaceholder": "文字起こし後に実行する指示を記述します。例: 以下のテキストの文法と明瞭さを改善してください: ${output}",
-        "promptTip": "ヒント: <code>${output}</code> を使用して、文字起こしテキストをプロンプトに挿入します。",
+        "promptTip": "ヒント: \u003ccode\u003e${output}\u003c/code\u003e を使用して、文字起こしテキストをプロンプトに挿入します。",
         "updatePrompt": "プロンプトを更新",
         "deletePrompt": "プロンプトを削除",
         "createPrompt": "プロンプトを作成",
         "cancel": "キャンセル",
         "selectToEdit": "上からプロンプトを選択して、詳細を表示・編集します。",
-        "createFirst": "上の「新しいプロンプトを作成」をクリックして、最初の後処理プロンプトを作成してください。"
+        "createFirst": "上の「新しいプロンプトを作成」をクリックして、最初の後処理プロンプトを作成してください。",
+        "description": "Create reusable cleanup instructions, then switch profiles from the footer before dictating.",
+        "profile": "Cleanup profile",
+        "libraryTitle": "Your profiles",
+        "libraryDescription": "{{count}} profiles available. The selected profile is used by the post-processing shortcut.",
+        "newTitle": "Create a cleanup profile",
+        "newDescription": "Give the profile a clear name and describe exactly how it should transform your dictation.",
+        "editTitle": "Edit selected profile",
+        "editDescription": "Changes apply the next time this profile is used.",
+        "duplicatePrompt": "Duplicate",
+        "keepOne": "At least one cleanup profile is required.",
+        "copyName": "{{name}} copy",
+        "deleteTitle": "Delete cleanup profile",
+        "deleteConfirm": "Delete the cleanup profile \u0027{{name}}\u0027?",
+        "created": "Cleanup profile created",
+        "createError": "Cleanup profile could not be created",
+        "updated": "Cleanup profile saved",
+        "updateError": "Cleanup profile could not be saved",
+        "duplicated": "Cleanup profile duplicated",
+        "duplicateError": "Cleanup profile could not be duplicated",
+        "deleted": "Cleanup profile deleted",
+        "deleteError": "Cleanup profile could not be deleted"
       }
     },
     "history": {
@@ -637,7 +719,8 @@
     "open": "開く",
     "copy": "コピー",
     "clear": "クリア",
-    "noOptionsFound": "オプションが見つかりません"
+    "noOptionsFound": "オプションが見つかりません",
+    "cancel": "Cancel"
   },
   "accessibility": {
     "permissionsDescription": "Handy が文字起こしテキストを入力するには、アクセシビリティ権限が必要です。",
@@ -672,6 +755,120 @@
       "system": "システム",
       "light": "ライト",
       "dark": "ダーク"
+    },
+    "accentTitle": "Accent Color",
+    "accentDescription": "Choose the color used for active controls and processing state",
+    "accents": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "teal": "Teal",
+      "rose": "Rose",
+      "amber": "Amber"
+    }
+  },
+  "appearance": {
+    "title": "Appearance",
+    "interfaceTitle": "Interface",
+    "widgetTitle": "On-screen Widget",
+    "fontSize": {
+      "title": "Text Size",
+      "description": "Adjust the text size throughout the LocalDictate settings window",
+      "options": {
+        "small": "Small",
+        "default": "Default",
+        "large": "Large"
+      }
+    },
+    "widgetAnimation": {
+      "title": "Animations",
+      "description": "Choose how much motion the on-screen recording widget uses. Reduced and Off keep clear state cues.",
+      "options": {
+        "full": "Full",
+        "reduced": "Reduced",
+        "off": "Off"
+      }
+    }
+  },
+  "themePacks": {
+    "appearanceTitle": "Appearance",
+    "title": "Theme Packs",
+    "description": "Discover and manage visual overlay packs and bundled presets.",
+    "loading": "Loading theme packs...",
+    "count_one": "{{count}} theme available",
+    "count_other": "{{count}} themes available",
+    "empty": "No theme packs are available.",
+    "applied": "Applied",
+    "codeTheme": "Code theme",
+    "byAuthor": "By {{author}}",
+    "previewAlt": "Preview of {{name}}",
+    "classicPreview": "Classic microphone and waveform overlay preview",
+    "previewUnavailable": "Preview unavailable",
+    "dimensions": "{{width}} x {{height}}",
+    "importDialogTitle": "Choose a theme pack directory",
+    "preset": {
+      "title": "Theme packs are one-time presets",
+      "description": "Applying a pack can change its overlay, app appearance, accent, and cleanup profile. Afterward, every setting remains independent and editable; the pack will not silently reapply itself."
+    },
+    "metadata": {
+      "renderer": "Renderer",
+      "canvas": "Canvas"
+    },
+    "features": {
+      "title": "Preset includes",
+      "overlay": "Overlay",
+      "appearance": "Appearance",
+      "sounds": "Sounds",
+      "cleanup": "Cleanup profile"
+    },
+    "sources": {
+      "classic": "Built in",
+      "bundled": "Bundled",
+      "installed": "Installed"
+    },
+    "renderers": {
+      "classic": "Classic controls",
+      "reactive-image": "Reactive image",
+      "sprite": "Sprite animation",
+      "particles": "Particles",
+      "web": "Web code"
+    },
+    "actions": {
+      "install": "Install from folder",
+      "installing": "Installing...",
+      "refresh": "Refresh",
+      "apply": "Apply preset",
+      "applying": "Applying...",
+      "applied": "Applied",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "cancel": "Cancel"
+    },
+    "trust": {
+      "cardWarning": "This theme contains executable visual code. Keep it only if you trust its author and source.",
+      "confirmTitle": "Trust and install code theme?",
+      "confirmDescription": "This pack contains executable theme code. Theme code is intended to run in a restricted overlay, but no code from an unknown source should be assumed safe. Install only if you trust the pack's author and where you obtained it.",
+      "installCode": "Trust and install"
+    },
+    "remove": {
+      "confirmTitle": "Remove theme pack?",
+      "confirmDescription": "Remove {{name}} from this device? If it is active, LocalDictate will return to the Classic overlay without undoing the individual settings its preset changed."
+    },
+    "success": {
+      "installed": "Theme pack installed",
+      "applied": "Theme preset applied",
+      "removed": "Theme pack removed"
+    },
+    "errors": {
+      "load": "Theme packs could not be loaded",
+      "install": "Theme pack could not be installed",
+      "apply": "Theme preset could not be applied",
+      "remove": "Theme pack could not be removed"
+    },
+    "status": {
+      "installing": "Installing theme pack",
+      "applying": "Applying theme preset",
+      "removing": "Removing theme pack",
+      "active": "Active theme pack: {{id}}"
     }
   },
   "overlay": {
@@ -691,5 +888,8 @@
     "learnMore": "解決方法",
     "recorderBlocked": "現在ショートカットを記録できません。macOS の Secure Input がキーイベントをブロックしています。先に Secure Input の警告を解消してください。",
     "dismiss": "閉じる"
+  },
+  "app": {
+    "name": "LocalDictate"
   }
 }

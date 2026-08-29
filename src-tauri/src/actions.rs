@@ -1,13 +1,14 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
-use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
 use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error, VadPolicy};
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::TranscriptionManager;
-use crate::settings::{get_settings, AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::settings::{
+    get_settings, AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID, CODEX_CLI_PROVIDER_ID,
+};
 use crate::shortcut;
 use crate::tray::{set_tray_state, TrayIconState};
 use crate::utils::{
@@ -178,6 +179,26 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         "Starting LLM post-processing with provider '{}' (model: {})",
         provider.id, model
     );
+
+    if provider.id == CODEX_CLI_PROVIDER_ID {
+        return match crate::codex_cli::polish_transcription(&prompt, transcription, &model).await {
+            Ok(content) => {
+                let content = strip_invisible_chars(&content);
+                debug!(
+                    "Codex CLI post-processing succeeded. Output length: {} chars",
+                    content.len()
+                );
+                Some(content)
+            }
+            Err(error) => {
+                error!(
+                    "Codex CLI post-processing failed: {}. Falling back to the raw transcription.",
+                    error
+                );
+                None
+            }
+        };
+    }
 
     let api_key = settings
         .post_process_api_keys
@@ -490,7 +511,7 @@ impl ShortcutAction for TranscribeAction {
         set_tray_state(app, TrayIconState::Recording);
         let tray_elapsed = tray_started.elapsed();
 
-        // Get the microphone mode to determine audio feedback timing
+        // Get the microphone mode before planning the recording path.
         let plan_started = Instant::now();
         let settings = get_settings(app);
         let is_always_on = settings.always_on_microphone;
@@ -525,7 +546,10 @@ impl ShortcutAction for TranscribeAction {
         match settings.overlay_style {
             OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),
             OverlayStyle::Live | OverlayStyle::Minimal => show_recording_overlay(app),
-            OverlayStyle::None => {} // show_overlay_state no-ops on None anyway
+            // Record the operation even while the native overlay is disabled.
+            // If the user enables overlays mid-recording, the hidden frontend
+            // can reveal an active state instead of falling back to idle.
+            OverlayStyle::None => show_recording_overlay(app),
         }
         // Everything above runs before capture can begin, so each span here is
         // added keypress->capture latency.
@@ -578,13 +602,6 @@ impl ShortcutAction for TranscribeAction {
                     debug!("Microphone is receiving samples; recording is ready");
                     utils::emit_recording_ready(&app_clone);
 
-                    // The start chime is a readiness cue, so it must follow the
-                    // first real input callback rather than Stream::play() or a
-                    // fixed delay. The helper returns immediately when feedback
-                    // is disabled; mute still follows the same readiness point.
-                    if rm_clone.is_recording_readiness_current(generation) {
-                        play_feedback_sound_blocking(&app_clone, SoundType::Start);
-                    }
                     if rm_clone.is_recording_readiness_current(generation) {
                         rm_clone.apply_mute();
                     }
@@ -630,8 +647,8 @@ impl ShortcutAction for TranscribeAction {
     }
 
     fn stop(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
-        // Prevent a slow microphone from emitting a ready event or start chime
-        // after the user has already requested stop.
+        // Prevent a slow microphone from emitting a ready event after the user
+        // has already requested stop.
         app.state::<Arc<AudioRecordingManager>>()
             .invalidate_recording_readiness();
 
@@ -661,11 +678,7 @@ impl ShortcutAction for TranscribeAction {
             show_transcribing_overlay(app);
         }
 
-        // Unmute before playing audio feedback so the stop sound is audible
         rm.remove_mute();
-
-        // Play audio feedback for recording stop
-        play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
         let post_process = self.post_process;
@@ -704,7 +717,7 @@ impl ShortcutAction for TranscribeAction {
                 } else {
                     // Save WAV concurrently with transcription
                     let sample_count = samples.len();
-                    let file_name = format!("handy-{}.wav", chrono::Utc::now().timestamp());
+                    let file_name = format!("localdictate-{}.wav", chrono::Utc::now().timestamp());
                     let wav_path = hm.recordings_dir().join(&file_name);
                     let wav_path_for_verify = wav_path.clone();
                     let samples_for_wav = samples.clone();

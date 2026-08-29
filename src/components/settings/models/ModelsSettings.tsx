@@ -1,16 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { ask } from "@tauri-apps/plugin-dialog";
+import { ask, open } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { toast } from "sonner";
 import {
   AudioLines,
   ChevronDown,
   Globe,
   Languages,
+  Link2,
   RefreshCw,
   Search,
+  ShieldCheck,
+  Upload,
 } from "lucide-react";
+import { commands } from "@/bindings";
 import type { ModelCardStatus } from "@/components/onboarding";
 import { ModelCard } from "@/components/onboarding";
+import { Button, Input } from "@/components/ui";
 import { useModelStore } from "@/stores/modelStore";
 import {
   getLanguageLabel,
@@ -28,7 +41,7 @@ const modelSupportsLanguage = (model: ModelInfo, langCode: string): boolean => {
 // the catalog GGUFs. They stay runnable when already on disk, but we no longer
 // advertise the download.
 const isLegacyModel = (model: ModelInfo): boolean =>
-  typeof model.source === "object" && "Url" in model.source;
+  !model.is_custom && typeof model.source === "object" && "Url" in model.source;
 
 export const ModelsSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -39,6 +52,13 @@ export const ModelsSettings: React.FC = () => {
   const [languageFilter, setLanguageFilter] = useState("all");
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const [languageSearch, setLanguageSearch] = useState("");
+  const [showLinkField, setShowLinkField] = useState(false);
+  const [modelUrl, setModelUrl] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
+  const [sourceOverrides, setSourceOverrides] = useState<
+    Partial<Record<string, string>>
+  >({});
   const languageDropdownRef = useRef<HTMLDivElement>(null);
   const languageSearchInputRef = useRef<HTMLInputElement>(null);
   const {
@@ -56,7 +76,20 @@ export const ModelsSettings: React.FC = () => {
     selectModel,
     deleteModel,
     rescanLocalModels,
+    loadModels,
   } = useModelStore();
+
+  const loadSourceOverrides = useCallback(async () => {
+    const result = await commands.getModelSourceOverrides();
+    if (result.status === "error") throw new Error(result.error);
+    setSourceOverrides(result.data);
+  }, []);
+
+  useEffect(() => {
+    void loadSourceOverrides().catch((error) => {
+      console.error("Failed to load model source overrides:", error);
+    });
+  }, [loadSourceOverrides]);
 
   // click outside handler for language dropdown
   useEffect(() => {
@@ -173,6 +206,88 @@ export const ModelsSettings: React.FC = () => {
     }
   };
 
+  const handleImportModel = async () => {
+    const selected = await open({
+      multiple: false,
+      directory: false,
+      title: t("settings.models.custom.importDialogTitle"),
+      filters: [
+        {
+          name: t("settings.models.custom.supportedFiles"),
+          extensions: ["gguf", "bin"],
+        },
+      ],
+    });
+    if (typeof selected !== "string") return;
+
+    setIsImporting(true);
+    try {
+      const result = await commands.importTranscriptionModel(selected);
+      if (result.status === "error") throw new Error(result.error);
+      await loadModels();
+      toast.success(t("settings.models.custom.importSuccess"), {
+        description: result.data.name,
+      });
+    } catch (error) {
+      toast.error(t("settings.models.custom.importError"), {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleLinkModel = async () => {
+    const url = modelUrl.trim();
+    if (!url) return;
+
+    setIsLinking(true);
+    try {
+      const result = await commands.linkTranscriptionModel(url);
+      if (result.status === "error") throw new Error(result.error);
+      await loadModels();
+      setModelUrl("");
+      setShowLinkField(false);
+      toast.success(t("settings.models.custom.linkSuccess"), {
+        description: result.data.name,
+      });
+    } catch (error) {
+      toast.error(t("settings.models.custom.linkError"), {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      setIsLinking(false);
+    }
+  };
+
+  const handleChangeModelSource = async (modelId: string, url: string) => {
+    try {
+      const result = await commands.setModelSourceOverride(modelId, url);
+      if (result.status === "error") throw new Error(result.error);
+      await loadSourceOverrides();
+      toast.success(t("settings.models.sources.changeSuccess"));
+    } catch (error) {
+      toast.error(t("settings.models.sources.changeError"), {
+        description: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  };
+
+  const handleResetModelSource = async (modelId: string) => {
+    try {
+      const result = await commands.clearModelSourceOverride(modelId);
+      if (result.status === "error") throw new Error(result.error);
+      await loadSourceOverrides();
+      toast.success(t("settings.models.sources.restoreSuccess"));
+    } catch (error) {
+      toast.error(t("settings.models.sources.restoreError"), {
+        description: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  };
+
   // Filter models by search query (name + description), language filter, and toggles
   const filteredModels = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -246,7 +361,116 @@ export const ModelsSettings: React.FC = () => {
         </p>
       </div>
 
+      <section className="rounded-xl bg-background-raised px-4 py-3.5">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-logo-primary" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold">
+              {t("settings.models.sources.title")}
+            </h2>
+            <p className="mt-1 max-w-[65ch] text-xs leading-5 text-text/60">
+              {t("settings.models.sources.description")}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+              <button
+                type="button"
+                onClick={() =>
+                  void openUrl("https://huggingface.co/handy-computer")
+                }
+                className="text-text/70 underline decoration-text/25 underline-offset-2 hover:text-logo-primary"
+              >
+                {t("settings.models.sources.catalog")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void openUrl("https://blob.handy.computer")}
+                className="text-text/70 underline decoration-text/25 underline-offset-2 hover:text-logo-primary"
+              >
+                {t("settings.models.sources.mirror")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Search bar — filter the catalog by name or description */}
+      <section className="rounded-xl bg-background-raised p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold">
+              {t("settings.models.custom.title")}
+            </h2>
+            <p className="mt-1 max-w-[62ch] text-xs leading-5 text-text/55">
+              {t("settings.models.custom.description")}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={isImporting || isLinking}
+              onClick={() => void handleImportModel()}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {isImporting
+                ? t("settings.models.custom.importing")
+                : t("settings.models.custom.import")}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={isImporting || isLinking}
+              onClick={() => setShowLinkField((visible) => !visible)}
+              className="flex items-center gap-2"
+            >
+              <Link2 className="h-4 w-4" />
+              {t("settings.models.custom.link")}
+            </Button>
+          </div>
+        </div>
+
+        {showLinkField && (
+          <div className="mt-4 flex gap-2">
+            <Input
+              type="url"
+              value={modelUrl}
+              onChange={(event) => setModelUrl(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void handleLinkModel();
+                if (event.key === "Escape") setShowLinkField(false);
+              }}
+              placeholder={t("settings.models.custom.urlPlaceholder")}
+              aria-label={t("settings.models.custom.urlLabel")}
+              disabled={isLinking}
+              className="min-w-0 flex-1 font-normal"
+            />
+            <Button
+              type="button"
+              disabled={!modelUrl.trim() || isLinking}
+              onClick={() => void handleLinkModel()}
+            >
+              {isLinking
+                ? t("settings.models.custom.linking")
+                : t("settings.models.custom.add")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isLinking}
+              onClick={() => {
+                setShowLinkField(false);
+                setModelUrl("");
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
+          </div>
+        )}
+      </section>
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text/40 pointer-events-none" />
         <input
@@ -416,6 +640,9 @@ export const ModelsSettings: React.FC = () => {
               downloadProgress={getDownloadProgress(model.id)}
               downloadSpeed={getDownloadSpeed(model.id)}
               showRecommended={false}
+              sourceOverride={sourceOverrides[model.id]}
+              onChangeSource={handleChangeModelSource}
+              onResetSource={handleResetModelSource}
             />
           ))}
         </div>
@@ -438,6 +665,9 @@ export const ModelsSettings: React.FC = () => {
                 downloadProgress={getDownloadProgress(model.id)}
                 downloadSpeed={getDownloadSpeed(model.id)}
                 showRecommended={true}
+                sourceOverride={sourceOverrides[model.id]}
+                onChangeSource={handleChangeModelSource}
+                onResetSource={handleResetModelSource}
               />
             ))}
           </div>

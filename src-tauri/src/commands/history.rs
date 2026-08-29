@@ -133,14 +133,7 @@ pub async fn update_recording_retention_period(
 ) -> Result<(), String> {
     use crate::settings::RecordingRetentionPeriod;
 
-    let retention_period = match period.as_str() {
-        "never" => RecordingRetentionPeriod::Never,
-        "preserve_limit" => RecordingRetentionPeriod::PreserveLimit,
-        "days3" => RecordingRetentionPeriod::Days3,
-        "weeks2" => RecordingRetentionPeriod::Weeks2,
-        "months3" => RecordingRetentionPeriod::Months3,
-        _ => return Err(format!("Invalid retention period: {}", period)),
-    };
+    let retention_period = RecordingRetentionPeriod::parse_setting_value(&period)?;
 
     let mut settings = crate::settings::get_settings(&app);
     settings.recording_retention_period = retention_period;

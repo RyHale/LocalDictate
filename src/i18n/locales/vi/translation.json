@@ -16,7 +16,8 @@
     "postProcessing": "Xử lý sau",
     "history": "Lịch sử",
     "debug": "Gỡ lỗi",
-    "about": "Giới thiệu"
+    "about": "Giới thiệu",
+    "navigation": "Settings sections"
   },
   "onboarding": {
     "subtitle": "Để bắt đầu, hãy chọn một mô hình chuyển đổi giọng nói",
@@ -152,7 +153,24 @@
     },
     "cancel": "Hủy",
     "cancelDownload": "Hủy tải xuống",
-    "legacy": "Cũ"
+    "legacy": "Cũ",
+    "source": "Source",
+    "openSource": "Open model source",
+    "sourceDetails": {
+      "label": "Download source",
+      "huggingFace": "Hugging Face: {{repository}} @ {{revision}}",
+      "directUrl": "Direct URL: {{url}}",
+      "customUrl": "Custom URL: {{url}}",
+      "localFile": "Imported file: {{filename}}",
+      "overridden": "Custom source",
+      "change": "Change",
+      "urlLabel": "Replacement download URL",
+      "urlPlaceholder": "https://models.example/model.gguf",
+      "help": "This changes where LocalDictate downloads this exact model file next time. Catalog checksums still apply, and mismatched files are rejected.",
+      "save": "Use this source",
+      "saving": "Saving...",
+      "restore": "Restore default source"
+    }
   },
   "settings": {
     "modelSettings": {
@@ -176,6 +194,33 @@
       "rescan": {
         "label": "Quét lại",
         "tooltip": "Quét lại các mô hình được thêm vào thư mục mô hình hoặc bộ nhớ đệm Hugging Face bên ngoài Handy"
+      },
+      "sources": {
+        "title": "Where models come from",
+        "description": "Catalog models come from pinned revisions in the handy-computer organization on Hugging Face. If Hugging Face is unavailable, LocalDictate tries blob.handy.computer. Catalog files are SHA-256 verified. Every model below lists its exact repository, and you can replace its download URL.",
+        "catalog": "Primary catalog: huggingface.co/handy-computer",
+        "mirror": "Fallback mirror: blob.handy.computer",
+        "changeSuccess": "Model source updated",
+        "changeError": "Model source could not be updated",
+        "restoreSuccess": "Default source restored",
+        "restoreError": "Default source could not be restored"
+      },
+      "custom": {
+        "title": "Use your own model",
+        "description": "Import a local model or link a direct download. LocalDictate supports transcribe.cpp-compatible .gguf and .bin speech models; translation is available when the model advertises it. Each catalog model also shows its download source.",
+        "import": "Import file",
+        "importing": "Importing…",
+        "importDialogTitle": "Import a transcription model",
+        "supportedFiles": "Speech model files",
+        "importSuccess": "Model imported",
+        "importError": "Model could not be imported",
+        "link": "Link URL",
+        "urlLabel": "Direct model download URL",
+        "urlPlaceholder": "https://example.com/speech-model.gguf",
+        "add": "Download model",
+        "linking": "Downloading…",
+        "linkSuccess": "Model linked and downloaded",
+        "linkError": "Model could not be linked"
       }
     },
     "general": {
@@ -292,7 +337,7 @@
       "overlay": {
         "style": {
           "title": "Lớp phủ",
-          "description": "Chọn lớp phủ khi ghi âm: 'Không có' sẽ ẩn nó, 'Tối giản' hiển thị một chỉ báo nhỏ gọn, 'Trực tiếp' hiển thị bản chép lời theo thời gian thực khi bạn nói (chỉ với các mô hình hỗ trợ truyền trực tiếp — hãy tìm huy hiệu 'Truyền trực tiếp' trong bộ chọn mô hình). Trên Linux, khuyến nghị chọn 'Không có'.",
+          "description": "Chọn lớp phủ khi ghi âm: \u0027Không có\u0027 sẽ ẩn nó, \u0027Tối giản\u0027 hiển thị một chỉ báo nhỏ gọn, \u0027Trực tiếp\u0027 hiển thị bản chép lời theo thời gian thực khi bạn nói (chỉ với các mô hình hỗ trợ truyền trực tiếp — hãy tìm huy hiệu \u0027Truyền trực tiếp\u0027 trong bộ chọn mô hình). Trên Linux, khuyến nghị chọn \u0027Không có\u0027.",
           "options": {
             "none": "Không có",
             "minimal": "Tối giản",
@@ -301,7 +346,7 @@
         },
         "position": {
           "title": "Vị trí lớp phủ",
-          "description": "Hiển thị lớp phủ phản hồi trực quan trong quá trình ghi âm và chuyển đổi. Trên Linux, 'Không có' được khuyến nghị.",
+          "description": "Hiển thị lớp phủ phản hồi trực quan trong quá trình ghi âm và chuyển đổi. Trên Linux, \u0027Không có\u0027 được khuyến nghị.",
           "options": {
             "bottom": "Dưới",
             "top": "Trên"
@@ -398,7 +443,10 @@
         "title": "API (Tương thích OpenAI)",
         "provider": {
           "title": "Nhà cung cấp",
-          "description": "Chọn một nhà cung cấp tương thích OpenAI."
+          "description": "Chọn một nhà cung cấp tương thích OpenAI.",
+          "source": "Connection",
+          "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "appleConnection": "On-device Apple Intelligence"
         },
         "appleIntelligence": {
           "unavailable": "Apple Intelligence không khả dụng trên thiết bị này. Yêu cầu Mac Apple Silicon chạy macOS Tahoe (26.0) trở lên với Apple Intelligence được bật trong Cài đặt Hệ thống."
@@ -419,7 +467,20 @@
           "descriptionDefault": "Chọn một mô hình được cung cấp bởi nhà cung cấp đã chọn.",
           "placeholderWithOptions": "Tìm kiếm hoặc chọn một mô hình",
           "placeholderNoOptions": "Nhập tên mô hình",
-          "refreshModels": "Làm mới mô hình"
+          "refreshModels": "Làm mới mô hình",
+          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
+          "placeholderCodex": "subscription_default or a Codex model ID"
+        },
+        "description": "Cleanup models are not downloaded by LocalDictate. Transcript text is sent to the selected local CLI or API endpoint. Choose Local or OpenAI-compatible to use Ollama, LM Studio, OpenRouter, or another compatible service.",
+        "codex": {
+          "checking": "Checking the local Codex CLI…",
+          "ready": "Ready — signed in to Codex with ChatGPT.",
+          "notInstalled": "Codex CLI was not found. Install it, then run codex login.",
+          "notAuthenticated": "Codex CLI is not signed in. Run codex login and choose ChatGPT.",
+          "nonChatgptAuthentication": "Codex is using API-key authentication. Run codex logout, then codex login and choose ChatGPT so this uses your subscription.",
+          "error": "LocalDictate could not verify Codex. Raw dictation still works.",
+          "privacy": "Raw dictation stays on this PC. Polished dictation sends only the transcript and cleanup instructions to OpenAI through your signed-in Codex CLI. If cleanup fails, LocalDictate pastes the raw transcript.",
+          "refresh": "Check again"
         }
       },
       "prompts": {
@@ -435,13 +496,34 @@
         "promptLabelPlaceholder": "Nhập tên prompt",
         "promptInstructions": "Hướng dẫn Prompt",
         "promptInstructionsPlaceholder": "Viết hướng dẫn để chạy sau khi chuyển đổi. Ví dụ: Cải thiện ngữ pháp và độ rõ ràng cho văn bản sau: ${output}",
-        "promptTip": "Mẹo: Sử dụng <code>${output}</code> để chèn văn bản đã chuyển đổi vào prompt của bạn.",
+        "promptTip": "Mẹo: Sử dụng \u003ccode\u003e${output}\u003c/code\u003e để chèn văn bản đã chuyển đổi vào prompt của bạn.",
         "updatePrompt": "Cập nhật Prompt",
         "deletePrompt": "Xóa Prompt",
         "createPrompt": "Tạo Prompt",
         "cancel": "Hủy",
         "selectToEdit": "Chọn một prompt ở trên để xem và chỉnh sửa chi tiết.",
-        "createFirst": "Nhấn 'Tạo Prompt mới' ở trên để tạo prompt xử lý sau đầu tiên của bạn."
+        "createFirst": "Nhấn \u0027Tạo Prompt mới\u0027 ở trên để tạo prompt xử lý sau đầu tiên của bạn.",
+        "description": "Create reusable cleanup instructions, then switch profiles from the footer before dictating.",
+        "profile": "Cleanup profile",
+        "libraryTitle": "Your profiles",
+        "libraryDescription": "{{count}} profiles available. The selected profile is used by the post-processing shortcut.",
+        "newTitle": "Create a cleanup profile",
+        "newDescription": "Give the profile a clear name and describe exactly how it should transform your dictation.",
+        "editTitle": "Edit selected profile",
+        "editDescription": "Changes apply the next time this profile is used.",
+        "duplicatePrompt": "Duplicate",
+        "keepOne": "At least one cleanup profile is required.",
+        "copyName": "{{name}} copy",
+        "deleteTitle": "Delete cleanup profile",
+        "deleteConfirm": "Delete the cleanup profile \u0027{{name}}\u0027?",
+        "created": "Cleanup profile created",
+        "createError": "Cleanup profile could not be created",
+        "updated": "Cleanup profile saved",
+        "updateError": "Cleanup profile could not be saved",
+        "duplicated": "Cleanup profile duplicated",
+        "duplicateError": "Cleanup profile could not be duplicated",
+        "deleted": "Cleanup profile deleted",
+        "deleteError": "Cleanup profile could not be deleted"
       }
     },
     "history": {
@@ -637,7 +719,8 @@
     "open": "Mở",
     "copy": "Sao chép",
     "clear": "Xóa",
-    "noOptionsFound": "Không tìm thấy tùy chọn"
+    "noOptionsFound": "Không tìm thấy tùy chọn",
+    "cancel": "Cancel"
   },
   "accessibility": {
     "permissionsDescription": "Handy cần quyền truy cập để gõ văn bản đã chuyển đổi.",
@@ -648,8 +731,8 @@
     "micPermissionDeniedTitle": "Quyền truy cập micrô bị từ chối",
     "micPermissionDenied": {
       "generic": "Quyền truy cập micrô đã bị hệ điều hành từ chối. Vui lòng cấp quyền micrô trong cài đặt hệ thống.",
-      "windows": "Bật quyền truy cập micrô trong Cài đặt → Quyền riêng tư & bảo mật → Micrô (bao gồm quyền truy cập ứng dụng máy tính).",
-      "macos": "Cấp quyền truy cập micrô trong Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Micrô.",
+      "windows": "Bật quyền truy cập micrô trong Cài đặt → Quyền riêng tư \u0026 bảo mật → Micrô (bao gồm quyền truy cập ứng dụng máy tính).",
+      "macos": "Cấp quyền truy cập micrô trong Cài đặt hệ thống → Quyền riêng tư \u0026 Bảo mật → Micrô.",
       "linux": "Cấp quyền truy cập micrô trong cài đặt âm thanh hoặc quyền riêng tư của hệ thống."
     },
     "noInputDeviceTitle": "Không tìm thấy micrô",
@@ -672,6 +755,120 @@
       "system": "Hệ thống",
       "light": "Sáng",
       "dark": "Tối"
+    },
+    "accentTitle": "Accent Color",
+    "accentDescription": "Choose the color used for active controls and processing state",
+    "accents": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "teal": "Teal",
+      "rose": "Rose",
+      "amber": "Amber"
+    }
+  },
+  "appearance": {
+    "title": "Appearance",
+    "interfaceTitle": "Interface",
+    "widgetTitle": "On-screen Widget",
+    "fontSize": {
+      "title": "Text Size",
+      "description": "Adjust the text size throughout the LocalDictate settings window",
+      "options": {
+        "small": "Small",
+        "default": "Default",
+        "large": "Large"
+      }
+    },
+    "widgetAnimation": {
+      "title": "Animations",
+      "description": "Choose how much motion the on-screen recording widget uses. Reduced and Off keep clear state cues.",
+      "options": {
+        "full": "Full",
+        "reduced": "Reduced",
+        "off": "Off"
+      }
+    }
+  },
+  "themePacks": {
+    "appearanceTitle": "Appearance",
+    "title": "Theme Packs",
+    "description": "Discover and manage visual overlay packs and bundled presets.",
+    "loading": "Loading theme packs...",
+    "count_one": "{{count}} theme available",
+    "count_other": "{{count}} themes available",
+    "empty": "No theme packs are available.",
+    "applied": "Applied",
+    "codeTheme": "Code theme",
+    "byAuthor": "By {{author}}",
+    "previewAlt": "Preview of {{name}}",
+    "classicPreview": "Classic microphone and waveform overlay preview",
+    "previewUnavailable": "Preview unavailable",
+    "dimensions": "{{width}} x {{height}}",
+    "importDialogTitle": "Choose a theme pack directory",
+    "preset": {
+      "title": "Theme packs are one-time presets",
+      "description": "Applying a pack can change its overlay, app appearance, accent, and cleanup profile. Afterward, every setting remains independent and editable; the pack will not silently reapply itself."
+    },
+    "metadata": {
+      "renderer": "Renderer",
+      "canvas": "Canvas"
+    },
+    "features": {
+      "title": "Preset includes",
+      "overlay": "Overlay",
+      "appearance": "Appearance",
+      "sounds": "Sounds",
+      "cleanup": "Cleanup profile"
+    },
+    "sources": {
+      "classic": "Built in",
+      "bundled": "Bundled",
+      "installed": "Installed"
+    },
+    "renderers": {
+      "classic": "Classic controls",
+      "reactive-image": "Reactive image",
+      "sprite": "Sprite animation",
+      "particles": "Particles",
+      "web": "Web code"
+    },
+    "actions": {
+      "install": "Install from folder",
+      "installing": "Installing...",
+      "refresh": "Refresh",
+      "apply": "Apply preset",
+      "applying": "Applying...",
+      "applied": "Applied",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "cancel": "Cancel"
+    },
+    "trust": {
+      "cardWarning": "This theme contains executable visual code. Keep it only if you trust its author and source.",
+      "confirmTitle": "Trust and install code theme?",
+      "confirmDescription": "This pack contains executable theme code. Theme code is intended to run in a restricted overlay, but no code from an unknown source should be assumed safe. Install only if you trust the pack's author and where you obtained it.",
+      "installCode": "Trust and install"
+    },
+    "remove": {
+      "confirmTitle": "Remove theme pack?",
+      "confirmDescription": "Remove {{name}} from this device? If it is active, LocalDictate will return to the Classic overlay without undoing the individual settings its preset changed."
+    },
+    "success": {
+      "installed": "Theme pack installed",
+      "applied": "Theme preset applied",
+      "removed": "Theme pack removed"
+    },
+    "errors": {
+      "load": "Theme packs could not be loaded",
+      "install": "Theme pack could not be installed",
+      "apply": "Theme preset could not be applied",
+      "remove": "Theme pack could not be removed"
+    },
+    "status": {
+      "installing": "Installing theme pack",
+      "applying": "Applying theme preset",
+      "removing": "Removing theme pack",
+      "active": "Active theme pack: {{id}}"
     }
   },
   "overlay": {
@@ -691,5 +888,8 @@
     "learnMore": "Cách khắc phục",
     "recorderBlocked": "Hiện không thể ghi phím tắt — Secure Input của macOS đang chặn các sự kiện phím. Hãy xử lý cảnh báo Secure Input trước.",
     "dismiss": "Bỏ qua"
+  },
+  "app": {
+    "name": "LocalDictate"
   }
 }

@@ -8,9 +8,9 @@ import { ReliablePasteToggle } from "./ReliablePaste";
 import { RecordingBuffer } from "./RecordingBuffer";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { AlwaysOnMicrophone } from "../AlwaysOnMicrophone";
-import { SoundPicker } from "../SoundPicker";
 import { ClamshellMicrophoneSelector } from "../ClamshellMicrophoneSelector";
 import { UpdateChecksToggle } from "../UpdateChecksToggle";
+import { ShowWhatsNewOnUpdate } from "../ShowWhatsNewOnUpdate";
 import { WhatsNewPreview } from "./WhatsNewPreview";
 import { KeyboardDiagnostic } from "./KeyboardDiagnostic";
 
@@ -23,10 +23,7 @@ export const DebugSettings: React.FC = () => {
         <LogLevelSelector grouped={true} />
         <WhatsNewPreview descriptionMode="tooltip" grouped={true} />
         <UpdateChecksToggle descriptionMode="tooltip" grouped={true} />
-        <SoundPicker
-          label={t("settings.debug.soundTheme.label")}
-          description={t("settings.debug.soundTheme.description")}
-        />
+        <ShowWhatsNewOnUpdate descriptionMode="tooltip" grouped={true} />
         <WordCorrectionThreshold descriptionMode="tooltip" grouped={true} />
         <PasteDelay descriptionMode="tooltip" grouped={true} />
         <PasteDelay

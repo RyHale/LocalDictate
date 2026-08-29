@@ -1,12 +1,10 @@
 name: "Main Branch Build"
 
-# Runs the full cross-platform build on every push to main so breakage is
-# caught before a manual release is triggered. Artifacts are kept for 30 days
-# so any commit on main has a downloadable, testable build.
+# The inherited cross-platform packaging workflow still contains upstream
+# Handy artifact paths. Keep it available for adaptation without running a
+# misleading or expensive build on every LocalDictate push.
 
-on:
-  push:
-    branches: [main]
+on: workflow_dispatch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

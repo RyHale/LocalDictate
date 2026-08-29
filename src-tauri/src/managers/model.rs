@@ -23,6 +23,9 @@ mod download;
 
 use download::{HttpDownloadOutcome, DOWNLOAD_STALL_TIMEOUT};
 
+const LINKED_MODEL_SOURCES_FILE: &str = ".linked-model-sources.json";
+const MODEL_SOURCE_OVERRIDES_FILE: &str = ".model-source-overrides.json";
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub enum EngineType {
     /// Any GGML/GGUF model loaded through transcribe-cpp (Whisper, Parakeet,
@@ -1111,6 +1114,10 @@ impl ModelManager {
         // find. Additive — see `seed_catalog_models`.
         Self::seed_catalog_models(&mut available_models);
 
+        // User-linked URLs are persisted separately from the model bytes so
+        // their provenance and resumable download remain available on restart.
+        Self::seed_linked_models(&models_dir, &mut available_models);
+
         // Auto-discover custom transcribe-cpp models (.bin / .gguf) in the models directory
         if let Err(e) = Self::discover_custom_transcribe_models(&models_dir, &mut available_models)
         {
@@ -1182,6 +1189,286 @@ impl ModelManager {
             }
         }
         info!("Seeded {} catalog model(s) into the registry", added);
+    }
+
+    fn linked_sources_path(models_dir: &Path) -> PathBuf {
+        models_dir.join(LINKED_MODEL_SOURCES_FILE)
+    }
+
+    fn source_overrides_path(models_dir: &Path) -> PathBuf {
+        models_dir.join(MODEL_SOURCE_OVERRIDES_FILE)
+    }
+
+    fn load_linked_sources(models_dir: &Path) -> HashMap<String, String> {
+        let path = Self::linked_sources_path(models_dir);
+        fs::read_to_string(path)
+            .ok()
+            .and_then(|json| serde_json::from_str(&json).ok())
+            .unwrap_or_default()
+    }
+
+    fn save_linked_sources(models_dir: &Path, sources: &HashMap<String, String>) -> Result<()> {
+        let path = Self::linked_sources_path(models_dir);
+        let json = serde_json::to_vec_pretty(sources)?;
+        fs::write(path, json)?;
+        Ok(())
+    }
+
+    fn load_source_overrides(models_dir: &Path) -> HashMap<String, String> {
+        let path = Self::source_overrides_path(models_dir);
+        fs::read_to_string(path)
+            .ok()
+            .and_then(|json| serde_json::from_str(&json).ok())
+            .unwrap_or_default()
+    }
+
+    fn save_source_overrides(models_dir: &Path, sources: &HashMap<String, String>) -> Result<()> {
+        let path = Self::source_overrides_path(models_dir);
+        let json = serde_json::to_vec_pretty(sources)?;
+        fs::write(path, json)?;
+        Ok(())
+    }
+
+    fn validate_source_override_url(url: &str) -> Result<String> {
+        let trimmed = url.trim();
+        if trimmed.len() > 8_192 {
+            return Err(anyhow::anyhow!("The model source URL is too long"));
+        }
+        let parsed = reqwest::Url::parse(trimmed)
+            .map_err(|_| anyhow::anyhow!("The model source must be a valid URL"))?;
+        if !matches!(parsed.scheme(), "http" | "https") {
+            return Err(anyhow::anyhow!("Model source URLs must use HTTP or HTTPS"));
+        }
+        Ok(parsed.to_string())
+    }
+
+    /// Direct download URLs selected by the user. These override acquisition
+    /// only: the original catalog source stays on `ModelInfo`, so provenance,
+    /// cache discovery, deletion, and catalog checksums keep their semantics.
+    pub fn get_model_source_overrides(&self) -> HashMap<String, String> {
+        let known_models = self.available_models.lock().unwrap();
+        Self::load_source_overrides(&self.models_dir)
+            .into_iter()
+            .filter(|(model_id, _)| known_models.contains_key(model_id))
+            .collect()
+    }
+
+    pub fn set_model_source_override(&self, model_id: &str, url: &str) -> Result<()> {
+        let validated_url = Self::validate_source_override_url(url)?;
+        {
+            let models = self.available_models.lock().unwrap();
+            let model = models
+                .get(model_id)
+                .ok_or_else(|| anyhow::anyhow!("Model not found: {}", model_id))?;
+            if matches!(model.source, ModelSource::Local) {
+                return Err(anyhow::anyhow!(
+                    "Imported local models do not have a download source to replace"
+                ));
+            }
+            if model.is_downloading {
+                return Err(anyhow::anyhow!(
+                    "Wait for the current model download to finish before changing its source"
+                ));
+            }
+        }
+
+        let mut overrides = Self::load_source_overrides(&self.models_dir);
+        overrides.insert(model_id.to_string(), validated_url);
+        Self::save_source_overrides(&self.models_dir, &overrides)?;
+        let _ = self.app_handle.emit("models-updated", ());
+        Ok(())
+    }
+
+    pub fn clear_model_source_override(&self, model_id: &str) -> Result<()> {
+        if !self.available_models.lock().unwrap().contains_key(model_id) {
+            return Err(anyhow::anyhow!("Model not found: {}", model_id));
+        }
+        let mut overrides = Self::load_source_overrides(&self.models_dir);
+        overrides.remove(model_id);
+        Self::save_source_overrides(&self.models_dir, &overrides)?;
+        let _ = self.app_handle.emit("models-updated", ());
+        Ok(())
+    }
+
+    fn display_name_from_filename(filename: &str) -> String {
+        let stem = filename
+            .strip_suffix(".gguf")
+            .or_else(|| filename.strip_suffix(".bin"))
+            .unwrap_or(filename);
+        stem.replace(['-', '_'], " ")
+            .split_whitespace()
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    fn validate_linked_filename(filename: &str) -> Result<String> {
+        let filename = filename.trim();
+        let path = Path::new(filename);
+        if filename.is_empty()
+            || path.file_name().and_then(|name| name.to_str()) != Some(filename)
+            || filename.starts_with('.')
+        {
+            return Err(anyhow::anyhow!(
+                "The model URL does not contain a safe file name"
+            ));
+        }
+        let lowercase = filename.to_ascii_lowercase();
+        if lowercase.ends_with(".gguf") {
+            return Ok(format!("{}.gguf", &filename[..filename.len() - 5]));
+        }
+        if lowercase.ends_with(".bin") {
+            return Ok(format!("{}.bin", &filename[..filename.len() - 4]));
+        }
+        Err(anyhow::anyhow!(
+            "Only transcribe.cpp .gguf and .bin models can be linked"
+        ))
+    }
+
+    fn linked_model_info(models_dir: &Path, filename: &str, url: &str) -> ModelInfo {
+        let path = models_dir.join(filename);
+        let is_downloaded = path.is_file();
+        let is_gguf = filename.to_ascii_lowercase().ends_with(".gguf");
+        let probe = if is_downloaded && is_gguf {
+            GgufHeaderProber.probe_file(&path)
+        } else {
+            CapabilityProbe::default()
+        };
+        let caps = local_caps(&probe);
+        let name = probed_display_name(&probe)
+            .unwrap_or_else(|| Self::display_name_from_filename(filename));
+        let id = filename
+            .strip_suffix(".gguf")
+            .or_else(|| filename.strip_suffix(".bin"))
+            .unwrap_or(filename)
+            .to_string();
+
+        ModelInfo {
+            id,
+            name,
+            description: "Linked by you".to_string(),
+            filename: filename.to_string(),
+            source: ModelSource::Url {
+                url: url.to_string(),
+                sha256: None,
+            },
+            size_mb: path
+                .metadata()
+                .map(|meta| meta.len() / (1024 * 1024))
+                .unwrap_or(0),
+            is_downloaded,
+            is_downloading: false,
+            partial_size: models_dir
+                .join(format!("{}.partial", filename))
+                .metadata()
+                .map(|meta| meta.len())
+                .unwrap_or(0),
+            is_directory: false,
+            engine_type: EngineType::TranscribeCpp,
+            accuracy_score: 0.0,
+            speed_score: 0.0,
+            supports_translation: caps.supports_translation,
+            is_recommended: false,
+            supported_languages: caps.supported_languages,
+            supports_language_selection: caps.supports_language_selection,
+            is_custom: true,
+            supports_streaming: caps.supports_streaming,
+            supports_language_detection: caps.supports_language_detection,
+        }
+    }
+
+    fn seed_linked_models(models_dir: &Path, available_models: &mut HashMap<String, ModelInfo>) {
+        for (filename, url) in Self::load_linked_sources(models_dir) {
+            let Ok(filename) = Self::validate_linked_filename(&filename) else {
+                warn!("Ignoring invalid linked model file name: {}", filename);
+                continue;
+            };
+            let info = Self::linked_model_info(models_dir, &filename, &url);
+            available_models.entry(info.id.clone()).or_insert(info);
+        }
+    }
+
+    /// Copy a user-selected transcribe.cpp model into LocalDictate's managed
+    /// model directory without overwriting an existing file.
+    pub fn import_model_file(&self, source_path: &Path) -> Result<ModelInfo> {
+        let source = source_path.canonicalize()?;
+        if !source.is_file() {
+            return Err(anyhow::anyhow!("The selected model is not a file"));
+        }
+        let filename = source
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| anyhow::anyhow!("The selected model has an invalid file name"))?;
+        let filename = Self::validate_linked_filename(filename)?;
+        let destination = self.models_dir.join(&filename);
+        if source == destination {
+            self.rescan_local_models()?;
+        } else {
+            if destination.exists() {
+                return Err(anyhow::anyhow!(
+                    "A model named '{}' is already in LocalDictate",
+                    filename
+                ));
+            }
+            let temporary = self.models_dir.join(format!("{}.importing", filename));
+            fs::copy(&source, &temporary)?;
+            fs::rename(&temporary, &destination)?;
+            self.rescan_local_models()?;
+        }
+
+        self.get_available_models()
+            .into_iter()
+            .find(|model| model.filename == filename && model.is_downloaded)
+            .ok_or_else(|| anyhow::anyhow!("The model format is not compatible with LocalDictate"))
+    }
+
+    /// Register and download a direct model URL. The URL is retained for
+    /// provenance, retries, and restarts.
+    pub async fn link_model_from_url(&self, url: &str) -> Result<ModelInfo> {
+        let parsed = reqwest::Url::parse(url).map_err(|_| anyhow::anyhow!("Invalid model URL"))?;
+        if !matches!(parsed.scheme(), "http" | "https") {
+            return Err(anyhow::anyhow!("Model URLs must use HTTP or HTTPS"));
+        }
+        let filename = parsed
+            .path_segments()
+            .and_then(|mut segments| segments.next_back())
+            .ok_or_else(|| anyhow::anyhow!("The model URL does not contain a file name"))?;
+        let filename = Self::validate_linked_filename(filename)?;
+        let info = Self::linked_model_info(&self.models_dir, &filename, parsed.as_str());
+
+        {
+            let models = self.available_models.lock().unwrap();
+            if models.contains_key(&info.id) {
+                return Err(anyhow::anyhow!(
+                    "A model named '{}' is already registered",
+                    info.name
+                ));
+            }
+        }
+
+        let mut sources = Self::load_linked_sources(&self.models_dir);
+        sources.insert(filename, parsed.to_string());
+        Self::save_linked_sources(&self.models_dir, &sources)?;
+        self.available_models
+            .lock()
+            .unwrap()
+            .insert(info.id.clone(), info.clone());
+        let _ = self.app_handle.emit("models-updated", ());
+
+        self.download_model(&info.id).await?;
+        let refreshed = Self::linked_model_info(&self.models_dir, &info.filename, parsed.as_str());
+        self.available_models
+            .lock()
+            .unwrap()
+            .insert(refreshed.id.clone(), refreshed.clone());
+        let _ = self.app_handle.emit("models-updated", ());
+        Ok(refreshed)
     }
 
     /// Claim the single rescan slot. Returns a guard that releases it on drop,
@@ -2159,15 +2446,35 @@ impl ModelManager {
         let model_info =
             model_info.ok_or_else(|| anyhow::anyhow!("Model not found: {}", model_id))?;
 
-        let (url, expected_sha256) = match &model_info.source {
-            ModelSource::Url { url, sha256 } => (url.clone(), sha256.clone()),
-            ModelSource::HuggingFace { repo_id, revision } => {
-                return self
-                    .download_hf_model(&model_info, repo_id.clone(), revision.clone())
-                    .await;
-            }
-            ModelSource::Local => {
-                return Err(anyhow::anyhow!("No download source for model"));
+        let source_override = Self::load_source_overrides(&self.models_dir)
+            .remove(model_id)
+            .map(|url| Self::validate_source_override_url(&url))
+            .transpose()?;
+        let (url, expected_sha256) = if let Some(url) = source_override {
+            let expected_sha256 = match &model_info.source {
+                ModelSource::Url { sha256, .. } => sha256.clone(),
+                ModelSource::HuggingFace { repo_id, .. } => {
+                    crate::catalog::file_in_catalog(&model_info.filename, Some(repo_id))
+                        .and_then(|(_, file)| file.sha256.clone())
+                }
+                ModelSource::Local => None,
+            };
+            info!(
+                "Using user-selected download source for {}: {}",
+                model_id, url
+            );
+            (url, expected_sha256)
+        } else {
+            match &model_info.source {
+                ModelSource::Url { url, sha256 } => (url.clone(), sha256.clone()),
+                ModelSource::HuggingFace { repo_id, revision } => {
+                    return self
+                        .download_hf_model(&model_info, repo_id.clone(), revision.clone())
+                        .await;
+                }
+                ModelSource::Local => {
+                    return Err(anyhow::anyhow!("No download source for model"));
+                }
             }
         };
         let model_path = self.models_dir.join(&model_info.filename);
@@ -2417,6 +2724,8 @@ impl ModelManager {
         let partial_path = self
             .models_dir
             .join(format!("{}.partial", &model_info.filename));
+        let is_linked_custom_model =
+            model_info.is_custom && matches!(&model_info.source, ModelSource::Url { .. });
         debug!("ModelManager: Model path: {:?}", model_path);
         debug!("ModelManager: Partial path: {:?}", partial_path);
 
@@ -2448,13 +2757,22 @@ impl ModelManager {
             deleted_something = true;
         }
 
-        if !deleted_something {
+        // A linked model remains in the catalog after a failed or cancelled
+        // first download. Let users remove that registration even when there
+        // is no complete or partial file left on disk.
+        if !deleted_something && !is_linked_custom_model {
             return Err(anyhow::anyhow!("No model files found to delete"));
         }
 
-        // Custom models should be removed from the list entirely since they
-        // have no download URL and can't be re-downloaded
+        // Imported and linked custom models are user-owned catalog entries, so
+        // deleting them removes the entry rather than reverting to downloadable.
         if model_info.is_custom {
+            if is_linked_custom_model {
+                let mut sources = Self::load_linked_sources(&self.models_dir);
+                if sources.remove(&model_info.filename).is_some() {
+                    Self::save_linked_sources(&self.models_dir, &sources)?;
+                }
+            }
             let mut models = self.available_models.lock().unwrap();
             models.remove(model_id);
             debug!("ModelManager: removed custom model from available models");
@@ -2579,6 +2897,27 @@ mod tests {
     use super::*;
     use std::io::Write;
     use tempfile::TempDir;
+
+    #[test]
+    fn source_override_accepts_http_and_https_urls() {
+        assert_eq!(
+            ModelManager::validate_source_override_url(
+                " https://models.example/parakeet.gguf?revision=main "
+            )
+            .unwrap(),
+            "https://models.example/parakeet.gguf?revision=main"
+        );
+        assert!(ModelManager::validate_source_override_url(
+            "http://localhost:11434/files/model.gguf"
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn source_override_rejects_non_download_schemes() {
+        assert!(ModelManager::validate_source_override_url("file:///model.gguf").is_err());
+        assert!(ModelManager::validate_source_override_url("javascript:alert(1)").is_err());
+    }
 
     #[test]
     fn test_effective_language_accepts_chinese_script_intent_for_zh_capability() {

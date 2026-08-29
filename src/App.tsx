@@ -44,9 +44,6 @@ function App() {
   const refreshAudioDevices = useSettingsStore(
     (state) => state.refreshAudioDevices,
   );
-  const refreshOutputDevices = useSettingsStore(
-    (state) => state.refreshOutputDevices,
-  );
   const hasCompletedPostOnboardingInit = useRef(false);
 
   useEffect(() => {
@@ -69,9 +66,8 @@ function App() {
         console.warn("Failed to initialize:", e);
       });
       refreshAudioDevices();
-      refreshOutputDevices();
     }
-  }, [onboardingStep, refreshAudioDevices, refreshOutputDevices]);
+  }, [onboardingStep, refreshAudioDevices]);
 
   // Handle keyboard shortcuts for debug mode toggle
   useEffect(() => {
@@ -304,15 +300,15 @@ function App() {
             onSectionChange={setCurrentSection}
           />
           {/* Scrollable content area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden bg-background">
             <div className="flex-1 overflow-y-auto">
-              <div className="flex flex-col items-center p-4 gap-4">
+              <div className="flex flex-col items-center gap-5 px-8 py-7">
                 <AccessibilityPermissions />
                 <SecureInputWarning />
                 {renderSettingsContent(currentSection)}
               </div>
             </div>
-          </div>
+          </main>
         </div>
         {/* Fixed footer at bottom */}
         <Footer />

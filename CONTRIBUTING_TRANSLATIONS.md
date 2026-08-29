@@ -1,5 +1,9 @@
 # Contributing Translations to Handy
 
+> **Upstream reference:** This guide is inherited from Handy. LocalDictate keeps
+> the same translation file structure, but LocalDictate contributions belong at
+> <https://github.com/RyHale/LocalDictate>.
+
 Thank you for helping translate Handy! This guide explains how to add or improve translations.
 
 ## Quick Start

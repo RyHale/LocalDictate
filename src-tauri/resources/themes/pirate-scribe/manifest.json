@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "pirate-scribe",
+  "name": "Pirate Scribe",
+  "description": "A salty quartermaster writes faster as your dictation gathers energy.",
+  "author": "LocalDictate",
+  "preview": "preview.png",
+  "overlay": {
+    "renderer": "sprite",
+    "width": 300,
+    "height": 230,
+    "anchor": "bottom-center",
+    "pointerMode": "passthrough",
+    "config": {
+      "layers": [
+        {
+          "atlas": "assets/pirate-atlas.png",
+          "columns": 4,
+          "rows": 2,
+          "clips": {
+            "watching": { "from": 0, "to": 1, "fps": 2, "loop": true },
+            "readying": { "from": 2, "to": 3, "fps": 5, "loop": false },
+            "writing": { "from": 3, "to": 5, "fps": 6, "loop": true },
+            "inspecting": { "from": 6, "to": 7, "fps": 2, "loop": true },
+            "pleased": { "from": 7, "to": 7, "fps": 1, "loop": true }
+          },
+          "lifecycleClips": {
+            "idle": "watching",
+            "arming": "readying",
+            "listening": "writing",
+            "transcribing": "inspecting",
+            "processing": "pleased"
+          },
+          "reducedMotionFrame": 0,
+          "scale": 0.5,
+          "speed": {
+            "source": "cadence",
+            "input": [0, 1],
+            "output": [0.7, 2.4],
+            "easing": "ease-out"
+          }
+        }
+      ]
+    }
+  },
+  "preset": {
+    "appearance": "dark",
+    "accent": "amber",
+    "postProcessing": {
+      "enabled": true,
+      "profile": {
+        "id": "theme:pirate-scribe",
+        "name": "Pirate polish",
+        "prompt": "Rewrite the raw dictation in a light, playful pirate voice while preserving its exact factual meaning, proper nouns, numbers, and requested formatting. Keep technical terms intact. Do not add claims or instructions. Return only the rewritten text."
+      }
+    }
+  }
+}

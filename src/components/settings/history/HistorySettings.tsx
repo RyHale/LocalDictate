@@ -172,13 +172,7 @@ export const HistorySettings: React.FC = () => {
     }
   };
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (error) {
-      console.error("Failed to copy to clipboard:", error);
-    }
-  };
+  const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
   const getAudioUrl = useCallback(
     async (fileName: string) => {
@@ -297,7 +291,7 @@ export const HistorySettings: React.FC = () => {
 interface HistoryEntryProps {
   entry: HistoryEntry;
   onToggleSaved: () => void;
-  onCopyText: () => void;
+  onCopyText: () => Promise<void>;
   getAudioUrl: (fileName: string) => Promise<string | null>;
   deleteAudio: (id: number) => Promise<void>;
   retryTranscription: (id: number) => Promise<void>;
@@ -322,14 +316,18 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     [getAudioUrl, entry.file_name],
   );
 
-  const handleCopyText = () => {
+  const handleCopyText = async () => {
     if (!hasTranscription) {
       return;
     }
 
-    onCopyText();
-    setShowCopied(true);
-    setTimeout(() => setShowCopied(false), 2000);
+    try {
+      await onCopyText();
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
+    }
   };
 
   const handleDeleteEntry = async () => {

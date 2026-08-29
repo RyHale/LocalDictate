@@ -27,9 +27,13 @@ export const AppLanguageSelector: React.FC<AppLanguageSelectorProps> =
       label: `${lang.nativeName} (${lang.name})`,
     }));
 
-    const handleLanguageChange = (langCode: string) => {
-      i18n.changeLanguage(langCode);
-      updateSetting("app_language", langCode);
+    const handleLanguageChange = async (langCode: string) => {
+      try {
+        await updateSetting("app_language", langCode);
+        await i18n.changeLanguage(langCode);
+      } catch {
+        // The settings store restores the previous value and reports the error.
+      }
     };
 
     return (

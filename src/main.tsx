@@ -5,7 +5,13 @@ import App from "./App";
 import { installCompatShims } from "./lib/compat";
 import {
   applyTheme,
+  applyThemeAccent,
+  applyUiFontSize,
+  applyWidgetAnimation,
   getStoredTheme,
+  getStoredThemeAccent,
+  getStoredUiFontSize,
+  getStoredWidgetAnimation,
   syncThemeFromSettings,
 } from "./lib/utils/theme";
 
@@ -17,6 +23,9 @@ document.documentElement.dataset.platform = platform();
 // Apply the last-known theme synchronously before render to avoid a flash of
 // the wrong palette, then reconcile with the persisted setting once it loads.
 applyTheme(getStoredTheme());
+applyThemeAccent(getStoredThemeAccent());
+applyUiFontSize(getStoredUiFontSize());
+applyWidgetAnimation(getStoredWidgetAnimation());
 syncThemeFromSettings();
 
 // Initialize i18n

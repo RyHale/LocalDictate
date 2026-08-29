@@ -16,7 +16,8 @@
     "postProcessing": "पोस्ट प्रोसेस",
     "history": "इतिहास",
     "debug": "डिबग",
-    "about": "के बारे में"
+    "about": "के बारे में",
+    "navigation": "Settings sections"
   },
   "onboarding": {
     "subtitle": "शुरू करने के लिए, एक ट्रांसक्रिप्शन मॉडल चुनें",
@@ -152,6 +153,23 @@
       "translation": "अंग्रेज़ी में अनुवाद कर सकता है",
       "translate": "अनुवाद करें",
       "streaming": "बोलते समय लाइव ट्रांसक्रिप्शन दिखाता है"
+    },
+    "source": "Source",
+    "openSource": "Open model source",
+    "sourceDetails": {
+      "label": "Download source",
+      "huggingFace": "Hugging Face: {{repository}} @ {{revision}}",
+      "directUrl": "Direct URL: {{url}}",
+      "customUrl": "Custom URL: {{url}}",
+      "localFile": "Imported file: {{filename}}",
+      "overridden": "Custom source",
+      "change": "Change",
+      "urlLabel": "Replacement download URL",
+      "urlPlaceholder": "https://models.example/model.gguf",
+      "help": "This changes where LocalDictate downloads this exact model file next time. Catalog checksums still apply, and mismatched files are rejected.",
+      "save": "Use this source",
+      "saving": "Saving...",
+      "restore": "Restore default source"
     }
   },
   "settings": {
@@ -189,7 +207,7 @@
       },
       "language": {
         "title": "भाषा",
-        "description": "बोली पहचानने के लिए भाषा चुनें. 'ऑटो' अपने आप भाषा पहचान लेता है, जबकि कोई खास भाषा चुनने से उस भाषा की सटीकता बेहतर हो सकती है.",
+        "description": "बोली पहचानने के लिए भाषा चुनें. \u0027ऑटो\u0027 अपने आप भाषा पहचान लेता है, जबकि कोई खास भाषा चुनने से उस भाषा की सटीकता बेहतर हो सकती है.",
         "searchPlaceholder": "भाषाएं खोजें...",
         "noResults": "कोई भाषा नहीं मिली",
         "auto": "ऑटो"
@@ -217,7 +235,34 @@
         "label": "फिर से स्कैन करें",
         "tooltip": "Handy के बाहर, मॉडल फ़ोल्डर या Hugging Face कैश में जोड़े गए मॉडल के लिए फिर से स्कैन करें"
       },
-      "noModelsMatch": "इस फ़िल्टर से मेल खाने वाला कोई मॉडल नहीं है."
+      "noModelsMatch": "इस फ़िल्टर से मेल खाने वाला कोई मॉडल नहीं है.",
+      "sources": {
+        "title": "Where models come from",
+        "description": "Catalog models come from pinned revisions in the handy-computer organization on Hugging Face. If Hugging Face is unavailable, LocalDictate tries blob.handy.computer. Catalog files are SHA-256 verified. Every model below lists its exact repository, and you can replace its download URL.",
+        "catalog": "Primary catalog: huggingface.co/handy-computer",
+        "mirror": "Fallback mirror: blob.handy.computer",
+        "changeSuccess": "Model source updated",
+        "changeError": "Model source could not be updated",
+        "restoreSuccess": "Default source restored",
+        "restoreError": "Default source could not be restored"
+      },
+      "custom": {
+        "title": "Use your own model",
+        "description": "Import a local model or link a direct download. LocalDictate supports transcribe.cpp-compatible .gguf and .bin speech models; translation is available when the model advertises it. Each catalog model also shows its download source.",
+        "import": "Import file",
+        "importing": "Importing…",
+        "importDialogTitle": "Import a transcription model",
+        "supportedFiles": "Speech model files",
+        "importSuccess": "Model imported",
+        "importError": "Model could not be imported",
+        "link": "Link URL",
+        "urlLabel": "Direct model download URL",
+        "urlPlaceholder": "https://example.com/speech-model.gguf",
+        "add": "Download model",
+        "linking": "Downloading…",
+        "linkSuccess": "Model linked and downloaded",
+        "linkError": "Model could not be linked"
+      }
     },
     "sound": {
       "title": "आवाज़",
@@ -267,7 +312,7 @@
       "acceleration": {
         "transcribe": {
           "title": "transcribe.cpp एक्सेलेरेशन",
-          "description": "transcribe.cpp (Whisper-परिवार) मॉडल के लिए हार्डवेयर एक्सेलेरेशन. 'ऑटो' उपलब्ध होने पर GPU का इस्तेमाल करता है (macOS पर Metal, Windows/Linux पर Vulkan)."
+          "description": "transcribe.cpp (Whisper-परिवार) मॉडल के लिए हार्डवेयर एक्सेलेरेशन. \u0027ऑटो\u0027 उपलब्ध होने पर GPU का इस्तेमाल करता है (macOS पर Metal, Windows/Linux पर Vulkan)."
         },
         "ort": {
           "title": "ONNX एक्सेलेरेशन",
@@ -292,7 +337,7 @@
       "overlay": {
         "style": {
           "title": "ओवरले",
-          "description": "रिकॉर्डिंग ओवरले चुनें: 'कोई नहीं' इसे छिपा देता है, 'मिनिमल' एक छोटा इंडिकेटर दिखाता है, 'लाइव' बोलते समय रीयल टाइम में ट्रांसक्रिप्शन दिखाता है (केवल स्ट्रीमिंग वाले मॉडल — मॉडल पिकर में 'स्ट्रीमिंग' बैज देखें). Linux पर 'कोई नहीं' चुनने का सुझाव दिया जाता है.",
+          "description": "रिकॉर्डिंग ओवरले चुनें: \u0027कोई नहीं\u0027 इसे छिपा देता है, \u0027मिनिमल\u0027 एक छोटा इंडिकेटर दिखाता है, \u0027लाइव\u0027 बोलते समय रीयल टाइम में ट्रांसक्रिप्शन दिखाता है (केवल स्ट्रीमिंग वाले मॉडल — मॉडल पिकर में \u0027स्ट्रीमिंग\u0027 बैज देखें). Linux पर \u0027कोई नहीं\u0027 चुनने का सुझाव दिया जाता है.",
           "options": {
             "none": "कोई नहीं",
             "minimal": "मिनिमल",
@@ -310,7 +355,7 @@
       },
       "pasteMethod": {
         "title": "पेस्ट करने का तरीका",
-        "description": "चुनें कि टेक्स्ट कैसे डाला जाए. 'डायरेक्ट': सिस्टम इनपुट के ज़रिए सीधे टाइप करता है. 'कोई नहीं': पेस्ट नहीं करता, केवल इतिहास/क्लिपबोर्ड अपडेट करता है.",
+        "description": "चुनें कि टेक्स्ट कैसे डाला जाए. \u0027डायरेक्ट\u0027: सिस्टम इनपुट के ज़रिए सीधे टाइप करता है. \u0027कोई नहीं\u0027: पेस्ट नहीं करता, केवल इतिहास/क्लिपबोर्ड अपडेट करता है.",
         "options": {
           "clipboard": "क्लिपबोर्ड ({{modifier}}+V)",
           "clipboardCtrlShiftV": "क्लिपबोर्ड (Ctrl+Shift+V)",
@@ -323,14 +368,14 @@
       },
       "typingTool": {
         "title": "टाइपिंग टूल",
-        "description": "चुनें कि 'डायरेक्ट' पेस्ट के लिए कौन सा Linux टाइपिंग टूल इस्तेमाल किया जाए. 'ऑटो' आपके सिस्टम के लिए सबसे अच्छा उपलब्ध टूल अपने आप चुन लेता है.",
+        "description": "चुनें कि \u0027डायरेक्ट\u0027 पेस्ट के लिए कौन सा Linux टाइपिंग टूल इस्तेमाल किया जाए. \u0027ऑटो\u0027 आपके सिस्टम के लिए सबसे अच्छा उपलब्ध टूल अपने आप चुन लेता है.",
         "options": {
           "auto": "ऑटो (सुझाया गया)"
         }
       },
       "clipboardHandling": {
         "title": "क्लिपबोर्ड मैनेजमेंट",
-        "description": "'क्लिपबोर्ड न बदलें' ट्रांसक्रिप्शन के बाद आपके क्लिपबोर्ड का मौजूदा कॉन्टेंट सुरक्षित रखता है. 'क्लिपबोर्ड पर कॉपी करें' पेस्ट करने के बाद ट्रांसक्रिप्शन का नतीजा आपके क्लिपबोर्ड में छोड़ देता है.",
+        "description": "\u0027क्लिपबोर्ड न बदलें\u0027 ट्रांसक्रिप्शन के बाद आपके क्लिपबोर्ड का मौजूदा कॉन्टेंट सुरक्षित रखता है. \u0027क्लिपबोर्ड पर कॉपी करें\u0027 पेस्ट करने के बाद ट्रांसक्रिप्शन का नतीजा आपके क्लिपबोर्ड में छोड़ देता है.",
         "options": {
           "dontModify": "क्लिपबोर्ड न बदलें",
           "copyToClipboard": "क्लिपबोर्ड पर कॉपी करें"
@@ -398,7 +443,10 @@
         "title": "API (OpenAI संगत)",
         "provider": {
           "title": "प्रोवाइडर",
-          "description": "कोई OpenAI-संगत प्रोवाइडर चुनें."
+          "description": "कोई OpenAI-संगत प्रोवाइडर चुनें.",
+          "source": "Connection",
+          "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "appleConnection": "On-device Apple Intelligence"
         },
         "appleIntelligence": {
           "unavailable": "Apple Intelligence इस डिवाइस पर उपलब्ध नहीं है. इसके लिए macOS Tahoe (26.0) या उसके बाद का वर्शन चलाने वाला Apple Silicon Mac चाहिए, जिसमें System Settings में Apple Intelligence चालू हो."
@@ -419,7 +467,20 @@
           "descriptionDefault": "चुने गए प्रोवाइडर का कोई मॉडल चुनें.",
           "placeholderWithOptions": "मॉडल खोजें या चुनें",
           "placeholderNoOptions": "मॉडल का नाम लिखें",
-          "refreshModels": "मॉडल रीफ़्रेश करें"
+          "refreshModels": "मॉडल रीफ़्रेश करें",
+          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
+          "placeholderCodex": "subscription_default or a Codex model ID"
+        },
+        "description": "Cleanup models are not downloaded by LocalDictate. Transcript text is sent to the selected local CLI or API endpoint. Choose Local or OpenAI-compatible to use Ollama, LM Studio, OpenRouter, or another compatible service.",
+        "codex": {
+          "checking": "Checking the local Codex CLI…",
+          "ready": "Ready — signed in to Codex with ChatGPT.",
+          "notInstalled": "Codex CLI was not found. Install it, then run codex login.",
+          "notAuthenticated": "Codex CLI is not signed in. Run codex login and choose ChatGPT.",
+          "nonChatgptAuthentication": "Codex is using API-key authentication. Run codex logout, then codex login and choose ChatGPT so this uses your subscription.",
+          "error": "LocalDictate could not verify Codex. Raw dictation still works.",
+          "privacy": "Raw dictation stays on this PC. Polished dictation sends only the transcript and cleanup instructions to OpenAI through your signed-in Codex CLI. If cleanup fails, LocalDictate pastes the raw transcript.",
+          "refresh": "Check again"
         }
       },
       "prompts": {
@@ -435,13 +496,34 @@
         "promptLabelPlaceholder": "प्रॉम्प्ट का नाम डालें",
         "promptInstructions": "प्रॉम्प्ट के निर्देश",
         "promptInstructionsPlaceholder": "ट्रांसक्रिप्शन के बाद चलाने के लिए निर्देश लिखें. उदाहरण: इस टेक्स्ट का व्याकरण और स्पष्टता सुधारें: ${output}",
-        "promptTip": "सुझाव: अपने प्रॉम्प्ट में ट्रांसक्राइब किया गया टेक्स्ट डालने के लिए <code>${output}</code> का इस्तेमाल करें.",
+        "promptTip": "सुझाव: अपने प्रॉम्प्ट में ट्रांसक्राइब किया गया टेक्स्ट डालने के लिए \u003ccode\u003e${output}\u003c/code\u003e का इस्तेमाल करें.",
         "updatePrompt": "प्रॉम्प्ट अपडेट करें",
         "deletePrompt": "प्रॉम्प्ट हटाएं",
         "createPrompt": "प्रॉम्प्ट बनाएं",
         "cancel": "रद्द करें",
         "selectToEdit": "जानकारी देखने और बदलाव करने के लिए, ऊपर कोई प्रॉम्प्ट चुनें.",
-        "createFirst": "अपना पहला पोस्ट-प्रोसेसिंग प्रॉम्प्ट बनाने के लिए, ऊपर 'नया प्रॉम्प्ट बनाएं' पर क्लिक करें."
+        "createFirst": "अपना पहला पोस्ट-प्रोसेसिंग प्रॉम्प्ट बनाने के लिए, ऊपर \u0027नया प्रॉम्प्ट बनाएं\u0027 पर क्लिक करें.",
+        "description": "Create reusable cleanup instructions, then switch profiles from the footer before dictating.",
+        "profile": "Cleanup profile",
+        "libraryTitle": "Your profiles",
+        "libraryDescription": "{{count}} profiles available. The selected profile is used by the post-processing shortcut.",
+        "newTitle": "Create a cleanup profile",
+        "newDescription": "Give the profile a clear name and describe exactly how it should transform your dictation.",
+        "editTitle": "Edit selected profile",
+        "editDescription": "Changes apply the next time this profile is used.",
+        "duplicatePrompt": "Duplicate",
+        "keepOne": "At least one cleanup profile is required.",
+        "copyName": "{{name}} copy",
+        "deleteTitle": "Delete cleanup profile",
+        "deleteConfirm": "Delete the cleanup profile \u0027{{name}}\u0027?",
+        "created": "Cleanup profile created",
+        "createError": "Cleanup profile could not be created",
+        "updated": "Cleanup profile saved",
+        "updateError": "Cleanup profile could not be saved",
+        "duplicated": "Cleanup profile duplicated",
+        "duplicateError": "Cleanup profile could not be duplicated",
+        "deleted": "Cleanup profile deleted",
+        "deleteError": "Cleanup profile could not be deleted"
       }
     },
     "history": {
@@ -485,8 +567,8 @@
         "description": "Handy के नए वर्शन की अपने आप जांच करें"
       },
       "whatsNewPreview": {
-        "title": "'नया क्या है' की झलक देखें",
-        "description": "बंडल की गई सबसे नई रिलीज़ नोट को 'देखा गया' मार्क किए बिना खोलें",
+        "title": "\u0027नया क्या है\u0027 की झलक देखें",
+        "description": "बंडल की गई सबसे नई रिलीज़ नोट को \u0027देखा गया\u0027 मार्क किए बिना खोलें",
         "button": "झलक देखें",
         "noNotes": "बंडल की गई कोई रिलीज़ नोट नहीं मिली",
         "error": "रिलीज़ नोट की झलक नहीं दिखाई जा सकी"
@@ -588,7 +670,7 @@
         "description": "Handy का मौजूदा वर्शन"
       },
       "whatsNewUpdates": {
-        "label": "'नया क्या है' दिखाएं",
+        "label": "\u0027नया क्या है\u0027 दिखाएं",
         "description": "Handy अपडेट होने के बाद रिलीज़ नोट दिखाएं"
       },
       "appDataDirectory": {
@@ -640,7 +722,8 @@
     "open": "खोलें",
     "copy": "कॉपी करें",
     "clear": "मिटाएं",
-    "noOptionsFound": "कोई विकल्प नहीं मिला"
+    "noOptionsFound": "कोई विकल्प नहीं मिला",
+    "cancel": "Cancel"
   },
   "accessibility": {
     "permissionsDescription": "ट्रांसक्राइब किया गया टेक्स्ट टाइप करने के लिए, Handy को ऐक्सेसिबिलिटी अनुमतियों की ज़रूरत है.",
@@ -651,8 +734,8 @@
     "micPermissionDeniedTitle": "माइक्रोफ़ोन का ऐक्सेस नहीं दिया गया",
     "micPermissionDenied": {
       "generic": "ऑपरेटिंग सिस्टम ने माइक्रोफ़ोन का ऐक्सेस नहीं दिया. कृपया अपनी सिस्टम सेटिंग में जाकर माइक्रोफ़ोन की अनुमति दें.",
-      "windows": "Settings → Privacy & security → Microphone में माइक्रोफ़ोन ऐक्सेस चालू करें (डेस्कटॉप ऐप ऐक्सेस समेत).",
-      "macos": "System Settings → Privacy & Security → Microphone में माइक्रोफ़ोन का ऐक्सेस दें.",
+      "windows": "Settings → Privacy \u0026 security → Microphone में माइक्रोफ़ोन ऐक्सेस चालू करें (डेस्कटॉप ऐप ऐक्सेस समेत).",
+      "macos": "System Settings → Privacy \u0026 Security → Microphone में माइक्रोफ़ोन का ऐक्सेस दें.",
       "linux": "अपने सिस्टम की साउंड या प्राइवेसी सेटिंग में माइक्रोफ़ोन का ऐक्सेस दें."
     },
     "noInputDeviceTitle": "कोई माइक्रोफ़ोन नहीं मिला",
@@ -675,6 +758,120 @@
       "system": "सिस्टम",
       "light": "लाइट",
       "dark": "डार्क"
+    },
+    "accentTitle": "Accent Color",
+    "accentDescription": "Choose the color used for active controls and processing state",
+    "accents": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "teal": "Teal",
+      "rose": "Rose",
+      "amber": "Amber"
+    }
+  },
+  "appearance": {
+    "title": "Appearance",
+    "interfaceTitle": "Interface",
+    "widgetTitle": "On-screen Widget",
+    "fontSize": {
+      "title": "Text Size",
+      "description": "Adjust the text size throughout the LocalDictate settings window",
+      "options": {
+        "small": "Small",
+        "default": "Default",
+        "large": "Large"
+      }
+    },
+    "widgetAnimation": {
+      "title": "Animations",
+      "description": "Choose how much motion the on-screen recording widget uses. Reduced and Off keep clear state cues.",
+      "options": {
+        "full": "Full",
+        "reduced": "Reduced",
+        "off": "Off"
+      }
+    }
+  },
+  "themePacks": {
+    "appearanceTitle": "Appearance",
+    "title": "Theme Packs",
+    "description": "Discover and manage visual overlay packs and bundled presets.",
+    "loading": "Loading theme packs...",
+    "count_one": "{{count}} theme available",
+    "count_other": "{{count}} themes available",
+    "empty": "No theme packs are available.",
+    "applied": "Applied",
+    "codeTheme": "Code theme",
+    "byAuthor": "By {{author}}",
+    "previewAlt": "Preview of {{name}}",
+    "classicPreview": "Classic microphone and waveform overlay preview",
+    "previewUnavailable": "Preview unavailable",
+    "dimensions": "{{width}} x {{height}}",
+    "importDialogTitle": "Choose a theme pack directory",
+    "preset": {
+      "title": "Theme packs are one-time presets",
+      "description": "Applying a pack can change its overlay, app appearance, accent, and cleanup profile. Afterward, every setting remains independent and editable; the pack will not silently reapply itself."
+    },
+    "metadata": {
+      "renderer": "Renderer",
+      "canvas": "Canvas"
+    },
+    "features": {
+      "title": "Preset includes",
+      "overlay": "Overlay",
+      "appearance": "Appearance",
+      "sounds": "Sounds",
+      "cleanup": "Cleanup profile"
+    },
+    "sources": {
+      "classic": "Built in",
+      "bundled": "Bundled",
+      "installed": "Installed"
+    },
+    "renderers": {
+      "classic": "Classic controls",
+      "reactive-image": "Reactive image",
+      "sprite": "Sprite animation",
+      "particles": "Particles",
+      "web": "Web code"
+    },
+    "actions": {
+      "install": "Install from folder",
+      "installing": "Installing...",
+      "refresh": "Refresh",
+      "apply": "Apply preset",
+      "applying": "Applying...",
+      "applied": "Applied",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "cancel": "Cancel"
+    },
+    "trust": {
+      "cardWarning": "This theme contains executable visual code. Keep it only if you trust its author and source.",
+      "confirmTitle": "Trust and install code theme?",
+      "confirmDescription": "This pack contains executable theme code. Theme code is intended to run in a restricted overlay, but no code from an unknown source should be assumed safe. Install only if you trust the pack's author and where you obtained it.",
+      "installCode": "Trust and install"
+    },
+    "remove": {
+      "confirmTitle": "Remove theme pack?",
+      "confirmDescription": "Remove {{name}} from this device? If it is active, LocalDictate will return to the Classic overlay without undoing the individual settings its preset changed."
+    },
+    "success": {
+      "installed": "Theme pack installed",
+      "applied": "Theme preset applied",
+      "removed": "Theme pack removed"
+    },
+    "errors": {
+      "load": "Theme packs could not be loaded",
+      "install": "Theme pack could not be installed",
+      "apply": "Theme preset could not be applied",
+      "remove": "Theme pack could not be removed"
+    },
+    "status": {
+      "installing": "Installing theme pack",
+      "applying": "Applying theme preset",
+      "removing": "Removing theme pack",
+      "active": "Active theme pack: {{id}}"
     }
   },
   "overlay": {
@@ -691,5 +888,8 @@
     "learnMore": "इसे कैसे ठीक करें",
     "recorderBlocked": "अभी शॉर्टकट रिकॉर्ड नहीं किए जा सकते — macOS Secure Input कुंजी इवेंट ब्लॉक कर रहा है. पहले Secure Input चेतावनी हल करें.",
     "dismiss": "खारिज करें"
+  },
+  "app": {
+    "name": "LocalDictate"
   }
 }

@@ -2,7 +2,7 @@
   "tray": {
     "settings": "Impostazioni...",
     "checkUpdates": "Verifica aggiornamenti...",
-    "copyLastTranscript": "Copia l'ultima trascrizione",
+    "copyLastTranscript": "Copia l\u0027ultima trascrizione",
     "unloadModel": "Rilascia modello",
     "model": "Modello",
     "quit": "Esci",
@@ -16,7 +16,8 @@
     "postProcessing": "Post-Elaborazione",
     "history": "Cronologia",
     "debug": "Debug",
-    "about": "Informazioni"
+    "about": "Informazioni",
+    "navigation": "Settings sections"
   },
   "onboarding": {
     "subtitle": "Per cominciare, scegli un modello di riconoscimento vocale",
@@ -107,7 +108,7 @@
         "description": "Necessario per sentire la tua voce per la trascrizione."
       },
       "accessibility": {
-        "title": "Accesso all'Accessibilità",
+        "title": "Accesso all\u0027Accessibilità",
         "description": "Necessario per digitare il testo trascritto nelle tue applicazioni."
       },
       "grant": "Concedi Permesso",
@@ -152,7 +153,24 @@
     },
     "cancel": "Annulla",
     "cancelDownload": "Annulla download",
-    "legacy": "Obsoleto"
+    "legacy": "Obsoleto",
+    "source": "Source",
+    "openSource": "Open model source",
+    "sourceDetails": {
+      "label": "Download source",
+      "huggingFace": "Hugging Face: {{repository}} @ {{revision}}",
+      "directUrl": "Direct URL: {{url}}",
+      "customUrl": "Custom URL: {{url}}",
+      "localFile": "Imported file: {{filename}}",
+      "overridden": "Custom source",
+      "change": "Change",
+      "urlLabel": "Replacement download URL",
+      "urlPlaceholder": "https://models.example/model.gguf",
+      "help": "This changes where LocalDictate downloads this exact model file next time. Catalog checksums still apply, and mismatched files are rejected.",
+      "save": "Use this source",
+      "saving": "Saving...",
+      "restore": "Restore default source"
+    }
   },
   "settings": {
     "modelSettings": {
@@ -176,6 +194,33 @@
       "rescan": {
         "label": "Riscansiona",
         "tooltip": "Riscansiona per trovare modelli aggiunti alla cartella dei modelli o alla cache di Hugging Face al di fuori di Handy"
+      },
+      "sources": {
+        "title": "Where models come from",
+        "description": "Catalog models come from pinned revisions in the handy-computer organization on Hugging Face. If Hugging Face is unavailable, LocalDictate tries blob.handy.computer. Catalog files are SHA-256 verified. Every model below lists its exact repository, and you can replace its download URL.",
+        "catalog": "Primary catalog: huggingface.co/handy-computer",
+        "mirror": "Fallback mirror: blob.handy.computer",
+        "changeSuccess": "Model source updated",
+        "changeError": "Model source could not be updated",
+        "restoreSuccess": "Default source restored",
+        "restoreError": "Default source could not be restored"
+      },
+      "custom": {
+        "title": "Use your own model",
+        "description": "Import a local model or link a direct download. LocalDictate supports transcribe.cpp-compatible .gguf and .bin speech models; translation is available when the model advertises it. Each catalog model also shows its download source.",
+        "import": "Import file",
+        "importing": "Importing…",
+        "importDialogTitle": "Import a transcription model",
+        "supportedFiles": "Speech model files",
+        "importSuccess": "Model imported",
+        "importError": "Model could not be imported",
+        "link": "Link URL",
+        "urlLabel": "Direct model download URL",
+        "urlPlaceholder": "https://example.com/speech-model.gguf",
+        "add": "Download model",
+        "linking": "Downloading…",
+        "linkSuccess": "Model linked and downloaded",
+        "linkError": "Model could not be linked"
       }
     },
     "general": {
@@ -209,7 +254,7 @@
       },
       "language": {
         "title": "Lingua",
-        "description": "Scegli la lingua per il riconoscimento vocale. Auto la determinerà automaticamente, mentre scegliere una lingua specifica può migliorare l'accuratezza per quella lingua.",
+        "description": "Scegli la lingua per il riconoscimento vocale. Auto la determinerà automaticamente, mentre scegliere una lingua specifica può migliorare l\u0027accuratezza per quella lingua.",
         "searchPlaceholder": "Cerca lingue...",
         "noResults": "Nessuna lingua trovata",
         "auto": "Automatico"
@@ -229,7 +274,7 @@
       },
       "channel": {
         "title": "Canale di ingresso",
-        "description": "Seleziona il canale di ingresso da cui registrare. Usa questa opzione se l'interfaccia audio dispone di più ingressi.",
+        "description": "Seleziona il canale di ingresso da cui registrare. Usa questa opzione se l\u0027interfaccia audio dispone di più ingressi.",
         "average": "Media di tutti i canali",
         "channel": "Canale {{n}}"
       },
@@ -262,7 +307,7 @@
       },
       "lazyStreamClose": {
         "label": "Mantieni il microfono aperto tra le trascrizioni",
-        "description": "Mantiene lo stream del microfono aperto per 30 secondi dopo l'arresto della registrazione, riducendo la latenza per trascrizioni consecutive. Potrebbe degradare la qualità audio Bluetooth."
+        "description": "Mantiene lo stream del microfono aperto per 30 secondi dopo l\u0027arresto della registrazione, riducendo la latenza per trascrizioni consecutive. Potrebbe degradare la qualità audio Bluetooth."
       },
       "acceleration": {
         "transcribe": {
@@ -279,20 +324,20 @@
       },
       "startHidden": {
         "label": "Avvia in Background",
-        "description": "Avvia l'applicazione in background senza aprire la finestra."
+        "description": "Avvia l\u0027applicazione in background senza aprire la finestra."
       },
       "autostart": {
-        "label": "Avvia all'Accensione",
+        "label": "Avvia all\u0027Accensione",
         "description": "Avvia Handy automaticamente quando accedi al computer."
       },
       "showTrayIcon": {
         "label": "Mostra icona nella barra di sistema",
-        "description": "Mostra l'icona di Handy nella barra di sistema."
+        "description": "Mostra l\u0027icona di Handy nella barra di sistema."
       },
       "overlay": {
         "style": {
           "title": "Overlay",
-          "description": "Scegli l'overlay di registrazione: 'Nessuno' lo nasconde, 'Minimo' mostra una barra compatta, 'In tempo reale' mostra la trascrizione in tempo reale mentre parli (solo per modelli che supportano lo streaming — cerca il badge 'Streaming' nel selettore del modello). Su Linux si raccomanda l'opzione 'Nessuno'.",
+          "description": "Scegli l\u0027overlay di registrazione: \u0027Nessuno\u0027 lo nasconde, \u0027Minimo\u0027 mostra una barra compatta, \u0027In tempo reale\u0027 mostra la trascrizione in tempo reale mentre parli (solo per modelli che supportano lo streaming — cerca il badge \u0027Streaming\u0027 nel selettore del modello). Su Linux si raccomanda l\u0027opzione \u0027Nessuno\u0027.",
           "options": {
             "none": "Nessuno",
             "minimal": "Minimo",
@@ -301,7 +346,7 @@
         },
         "position": {
           "title": "Posizione della Sovrimpressione",
-          "description": "Mostra un feedback visivo in sovrimpressione durante la registrazione e la trascrizione. Su Linux si raccomanda 'Nessuna'.",
+          "description": "Mostra un feedback visivo in sovrimpressione durante la registrazione e la trascrizione. Su Linux si raccomanda \u0027Nessuna\u0027.",
           "options": {
             "bottom": "In basso",
             "top": "In alto"
@@ -310,7 +355,7 @@
       },
       "pasteMethod": {
         "title": "Metodo di Incollaggio",
-        "description": "Scegli come viene inserito il testo. Diretto: simula l'input da tastiera. Nessuno: non incolla, aggiorna solo la cronologia/appunti.",
+        "description": "Scegli come viene inserito il testo. Diretto: simula l\u0027input da tastiera. Nessuno: non incolla, aggiorna solo la cronologia/appunti.",
         "options": {
           "clipboard": "Appunti ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Appunti (Ctrl+Shift+V)",
@@ -338,7 +383,7 @@
       },
       "autoSubmit": {
         "title": "Invio automatico",
-        "description": "Invia automaticamente la combinazione di tasti selezionata dopo l'inserimento del testo. Cmd+Enter si applica su macOS, mentre Windows/Linux usano Super+Enter.",
+        "description": "Invia automaticamente la combinazione di tasti selezionata dopo l\u0027inserimento del testo. Cmd+Enter si applica su macOS, mentre Windows/Linux usano Super+Enter.",
         "options": {
           "off": "Disattivato",
           "enter": "Invio",
@@ -374,8 +419,8 @@
         "duplicate": "\"{{word}}\" esiste già"
       },
       "voiceActivityDetection": {
-        "title": "Rilevamento dell'attività vocale",
-        "description": "Filtra il silenzio dalle registrazioni. I modelli che supportano lo streaming utilizzano una coda VAD più lunga; disabilitando la VAD si registra l'audio grezzo."
+        "title": "Rilevamento dell\u0027attività vocale",
+        "description": "Filtra il silenzio dalle registrazioni. I modelli che supportano lo streaming utilizzano una coda VAD più lunga; disabilitando la VAD si registra l\u0027audio grezzo."
       },
       "vadBackend": {
         "title": "Backend di rilevamento vocale",
@@ -398,14 +443,17 @@
         "title": "API (Compatibile con OpenAI)",
         "provider": {
           "title": "Provider",
-          "description": "Seleziona un provider compatibile con OpenAI."
+          "description": "Seleziona un provider compatibile con OpenAI.",
+          "source": "Connection",
+          "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "appleConnection": "On-device Apple Intelligence"
         },
         "appleIntelligence": {
           "unavailable": "Apple Intelligence non è disponibile su questo dispositivo. Necessita di un Mac con Apple Silicon e macOS Tahoe (26.0) o successivi con Apple Intelligence abilitata nelle Impostazioni di Sistema."
         },
         "baseUrl": {
           "title": "URL Base",
-          "description": "URL di base per l'API del provider selezionato. Solo per i provider personalizzati.",
+          "description": "URL di base per l\u0027API del provider selezionato. Solo per i provider personalizzati.",
           "placeholder": "https://api.openai.com/v1"
         },
         "apiKey": {
@@ -415,11 +463,24 @@
         },
         "model": {
           "title": "Modello",
-          "descriptionCustom": "Fornisci l'identificatore del modello previsto dal tuo endpoint personalizzato.",
+          "descriptionCustom": "Fornisci l\u0027identificatore del modello previsto dal tuo endpoint personalizzato.",
           "descriptionDefault": "Scegli un modello reso disponibile dal provider selezionato.",
           "placeholderWithOptions": "Cerca o scegli un modello",
           "placeholderNoOptions": "Digita il nome di un modello",
-          "refreshModels": "Aggiorna modelli"
+          "refreshModels": "Aggiorna modelli",
+          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
+          "placeholderCodex": "subscription_default or a Codex model ID"
+        },
+        "description": "Cleanup models are not downloaded by LocalDictate. Transcript text is sent to the selected local CLI or API endpoint. Choose Local or OpenAI-compatible to use Ollama, LM Studio, OpenRouter, or another compatible service.",
+        "codex": {
+          "checking": "Checking the local Codex CLI…",
+          "ready": "Ready — signed in to Codex with ChatGPT.",
+          "notInstalled": "Codex CLI was not found. Install it, then run codex login.",
+          "notAuthenticated": "Codex CLI is not signed in. Run codex login and choose ChatGPT.",
+          "nonChatgptAuthentication": "Codex is using API-key authentication. Run codex logout, then codex login and choose ChatGPT so this uses your subscription.",
+          "error": "LocalDictate could not verify Codex. Raw dictation still works.",
+          "privacy": "Raw dictation stays on this PC. Polished dictation sends only the transcript and cleanup instructions to OpenAI through your signed-in Codex CLI. If cleanup fails, LocalDictate pastes the raw transcript.",
+          "refresh": "Check again"
         }
       },
       "prompts": {
@@ -435,13 +496,34 @@
         "promptLabelPlaceholder": "Inserisci il nome del prompt",
         "promptInstructions": "Istruzioni del Prompt",
         "promptInstructionsPlaceholder": "Scrivi le istruzioni da eseguire dopo la trascrizione. Esempio: Migliora la grammatica e la chiarezza per il seguente testo: ${output}",
-        "promptTip": "Suggerimento: Usa <code>${output}</code> per inserire il testo trascritto nel tuo prompt.",
+        "promptTip": "Suggerimento: Usa \u003ccode\u003e${output}\u003c/code\u003e per inserire il testo trascritto nel tuo prompt.",
         "updatePrompt": "Aggiorna Prompt",
         "deletePrompt": "Elimina Prompt",
         "createPrompt": "Crea Prompt",
         "cancel": "Annulla",
         "selectToEdit": "Scegli un prompt qui sopra per visualizzare o modificare i dettagli.",
-        "createFirst": "Clicca 'Crea un nuovo prompt' qui sopra per creare il tuo primo prompt di post-elaborazione."
+        "createFirst": "Clicca \u0027Crea un nuovo prompt\u0027 qui sopra per creare il tuo primo prompt di post-elaborazione.",
+        "description": "Create reusable cleanup instructions, then switch profiles from the footer before dictating.",
+        "profile": "Cleanup profile",
+        "libraryTitle": "Your profiles",
+        "libraryDescription": "{{count}} profiles available. The selected profile is used by the post-processing shortcut.",
+        "newTitle": "Create a cleanup profile",
+        "newDescription": "Give the profile a clear name and describe exactly how it should transform your dictation.",
+        "editTitle": "Edit selected profile",
+        "editDescription": "Changes apply the next time this profile is used.",
+        "duplicatePrompt": "Duplicate",
+        "keepOne": "At least one cleanup profile is required.",
+        "copyName": "{{name}} copy",
+        "deleteTitle": "Delete cleanup profile",
+        "deleteConfirm": "Delete the cleanup profile \u0027{{name}}\u0027?",
+        "created": "Cleanup profile created",
+        "createError": "Cleanup profile could not be created",
+        "updated": "Cleanup profile saved",
+        "updateError": "Cleanup profile could not be saved",
+        "duplicated": "Cleanup profile duplicated",
+        "duplicateError": "Cleanup profile could not be duplicated",
+        "deleted": "Cleanup profile deleted",
+        "deleteError": "Cleanup profile could not be deleted"
       }
     },
     "history": {
@@ -453,11 +535,11 @@
       "save": "Salva la trascrizione",
       "unsave": "Rimuovi dai salvataggi",
       "delete": "Elimina elemento",
-      "deleteError": "Errore nell'eliminazione dell'elemento. Riprova.",
+      "deleteError": "Errore nell\u0027eliminazione dell\u0027elemento. Riprova.",
       "retranscribe": "Ri-trascrivere",
       "retranscribeError": "Impossibile ri-trascrivere. Riprova.",
       "transcribing": "Trascrizione in corso...",
-      "transcriptionFailed": "Trascrizione fallita. Puoi ri-trascrivere usando l'icona di ripetizione."
+      "transcriptionFailed": "Trascrizione fallita. Puoi ri-trascrivere usando l\u0027icona di ripetizione."
     },
     "debug": {
       "title": "Debug",
@@ -471,14 +553,14 @@
       },
       "liveLogs": {
         "title": "Log in Tempo Reale",
-        "description": "Trasmetti i log dell'applicazione in tempo reale per diagnosticare i problemi senza aprire il file di log. Vengono mostrati solo i log emessi mentre questo pannello è aperto; rispetta l'impostazione Livello di Log qui sopra.",
+        "description": "Trasmetti i log dell\u0027applicazione in tempo reale per diagnosticare i problemi senza aprire il file di log. Vengono mostrati solo i log emessi mentre questo pannello è aperto; rispetta l\u0027impostazione Livello di Log qui sopra.",
         "live": "In Diretta",
         "paused": "In Pausa",
         "pause": "Pausa",
         "resume": "Riprendi",
         "copied": "Copiato",
         "lineCount": "{{count}} righe",
-        "empty": "In attesa di log… Le voci appariranno qui man mano che l'app le emette."
+        "empty": "In attesa di log… Le voci appariranno qui man mano che l\u0027app le emette."
       },
       "updateChecks": {
         "label": "Controlla aggiornamenti",
@@ -521,7 +603,7 @@
       },
       "muteWhileRecording": {
         "label": "Silenzia durante la registrazione",
-        "description": "Silenzia l'audio di sistema durante la registrazione"
+        "description": "Silenzia l\u0027audio di sistema durante la registrazione"
       },
       "appendTrailingSpace": {
         "label": "Aggiungi Spazio Finale",
@@ -547,11 +629,11 @@
       },
       "reliablePaste": {
         "title": "Incolla affidabile (Beta)",
-        "description": "Ripristina gli appunti solo dopo che l'app di destinazione ha effettivamente letto la trascrizione, anziché dopo un ritardo fisso. Serve a risolvere l'incollaggio del vecchio contenuto degli appunti quando il sistema è sotto carico. Richiede un metodo di incollaggio tramite appunti; solo macOS e Windows."
+        "description": "Ripristina gli appunti solo dopo che l\u0027app di destinazione ha effettivamente letto la trascrizione, anziché dopo un ritardo fisso. Serve a risolvere l\u0027incollaggio del vecchio contenuto degli appunti quando il sistema è sotto carico. Richiede un metodo di incollaggio tramite appunti; solo macOS e Windows."
       },
       "recordingBuffer": {
         "title": "Buffer di registrazione extra",
-        "description": "Tempo extra (in millisecondi) per continuare a registrare dopo aver rilasciato il tasto, per catturare l'audio finale. 0 = nessun buffer extra."
+        "description": "Tempo extra (in millisecondi) per continuare a registrare dopo aver rilasciato il tasto, per catturare l\u0027audio finale. 0 = nessun buffer extra."
       },
       "keyboardDiagnostic": {
         "title": "Diagnostica tastiera",
@@ -578,7 +660,7 @@
         "description": "Apri le note di rilascio incluse più recenti senza segnarle come viste",
         "button": "Anteprima",
         "noNotes": "Nessuna nota di rilascio inclusa trovata",
-        "error": "Impossibile mostrare l'anteprima delle note di rilascio"
+        "error": "Impossibile mostrare l\u0027anteprima delle note di rilascio"
       }
     },
     "about": {
@@ -637,7 +719,8 @@
     "open": "Apri",
     "copy": "Copia",
     "clear": "Svuota",
-    "noOptionsFound": "Nessuna opzione trovata"
+    "noOptionsFound": "Nessuna opzione trovata",
+    "cancel": "Cancel"
   },
   "accessibility": {
     "permissionsDescription": "Handy ha bisogno dei permessi di accessibilità per digitare il testo trascritto.",
@@ -647,10 +730,10 @@
     "loadDirectory": "Errore di caricamento cartella: {{error}}",
     "micPermissionDeniedTitle": "Accesso al microfono negato",
     "micPermissionDenied": {
-      "generic": "L'accesso al microfono è stato negato dal sistema operativo. Concedi l'autorizzazione al microfono nelle impostazioni di sistema.",
-      "windows": "Abilita l'accesso al microfono in Impostazioni → Privacy e sicurezza → Microfono (incluso l'accesso delle app desktop).",
-      "macos": "Concedi l'accesso al microfono in Impostazioni di Sistema → Privacy e sicurezza → Microfono.",
-      "linux": "Concedi l'accesso al microfono nelle impostazioni audio o sulla privacy del tuo sistema."
+      "generic": "L\u0027accesso al microfono è stato negato dal sistema operativo. Concedi l\u0027autorizzazione al microfono nelle impostazioni di sistema.",
+      "windows": "Abilita l\u0027accesso al microfono in Impostazioni → Privacy e sicurezza → Microfono (incluso l\u0027accesso delle app desktop).",
+      "macos": "Concedi l\u0027accesso al microfono in Impostazioni di Sistema → Privacy e sicurezza → Microfono.",
+      "linux": "Concedi l\u0027accesso al microfono nelle impostazioni audio o sulla privacy del tuo sistema."
     },
     "noInputDeviceTitle": "Nessun microfono trovato",
     "noInputDevice": "Non è stato rilevato alcun dispositivo di ingresso audio. Collega un microfono o delle cuffie e riprova.",
@@ -658,20 +741,134 @@
     "modelLoadFailed": "Impossibile caricare il modello: {{model}}",
     "modelLoadFailedUnknown": "modello sconosciuto",
     "pasteFailedTitle": "Impossibile incollare il testo",
-    "pasteFailed": "Non è stato possibile incollare il testo nell'applicazione attiva.",
+    "pasteFailed": "Non è stato possibile incollare il testo nell\u0027applicazione attiva.",
     "transcriptionFailedTitle": "Trascrizione non riuscita"
   },
   "appLanguage": {
     "title": "Lingua Applicazione",
-    "description": "Cambia la lingua dell'interfaccia di Handy"
+    "description": "Cambia la lingua dell\u0027interfaccia di Handy"
   },
   "theme": {
-    "title": "Tema dell'applicazione",
+    "title": "Tema dell\u0027applicazione",
     "description": "Scegli se Handy segue il tema di sistema o resta chiaro o scuro",
     "options": {
       "system": "Sistema",
       "light": "Chiaro",
       "dark": "Scuro"
+    },
+    "accentTitle": "Accent Color",
+    "accentDescription": "Choose the color used for active controls and processing state",
+    "accents": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "teal": "Teal",
+      "rose": "Rose",
+      "amber": "Amber"
+    }
+  },
+  "appearance": {
+    "title": "Appearance",
+    "interfaceTitle": "Interface",
+    "widgetTitle": "On-screen Widget",
+    "fontSize": {
+      "title": "Text Size",
+      "description": "Adjust the text size throughout the LocalDictate settings window",
+      "options": {
+        "small": "Small",
+        "default": "Default",
+        "large": "Large"
+      }
+    },
+    "widgetAnimation": {
+      "title": "Animations",
+      "description": "Choose how much motion the on-screen recording widget uses. Reduced and Off keep clear state cues.",
+      "options": {
+        "full": "Full",
+        "reduced": "Reduced",
+        "off": "Off"
+      }
+    }
+  },
+  "themePacks": {
+    "appearanceTitle": "Appearance",
+    "title": "Theme Packs",
+    "description": "Discover and manage visual overlay packs and bundled presets.",
+    "loading": "Loading theme packs...",
+    "count_one": "{{count}} theme available",
+    "count_other": "{{count}} themes available",
+    "empty": "No theme packs are available.",
+    "applied": "Applied",
+    "codeTheme": "Code theme",
+    "byAuthor": "By {{author}}",
+    "previewAlt": "Preview of {{name}}",
+    "classicPreview": "Classic microphone and waveform overlay preview",
+    "previewUnavailable": "Preview unavailable",
+    "dimensions": "{{width}} x {{height}}",
+    "importDialogTitle": "Choose a theme pack directory",
+    "preset": {
+      "title": "Theme packs are one-time presets",
+      "description": "Applying a pack can change its overlay, app appearance, accent, and cleanup profile. Afterward, every setting remains independent and editable; the pack will not silently reapply itself."
+    },
+    "metadata": {
+      "renderer": "Renderer",
+      "canvas": "Canvas"
+    },
+    "features": {
+      "title": "Preset includes",
+      "overlay": "Overlay",
+      "appearance": "Appearance",
+      "sounds": "Sounds",
+      "cleanup": "Cleanup profile"
+    },
+    "sources": {
+      "classic": "Built in",
+      "bundled": "Bundled",
+      "installed": "Installed"
+    },
+    "renderers": {
+      "classic": "Classic controls",
+      "reactive-image": "Reactive image",
+      "sprite": "Sprite animation",
+      "particles": "Particles",
+      "web": "Web code"
+    },
+    "actions": {
+      "install": "Install from folder",
+      "installing": "Installing...",
+      "refresh": "Refresh",
+      "apply": "Apply preset",
+      "applying": "Applying...",
+      "applied": "Applied",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "cancel": "Cancel"
+    },
+    "trust": {
+      "cardWarning": "This theme contains executable visual code. Keep it only if you trust its author and source.",
+      "confirmTitle": "Trust and install code theme?",
+      "confirmDescription": "This pack contains executable theme code. Theme code is intended to run in a restricted overlay, but no code from an unknown source should be assumed safe. Install only if you trust the pack's author and where you obtained it.",
+      "installCode": "Trust and install"
+    },
+    "remove": {
+      "confirmTitle": "Remove theme pack?",
+      "confirmDescription": "Remove {{name}} from this device? If it is active, LocalDictate will return to the Classic overlay without undoing the individual settings its preset changed."
+    },
+    "success": {
+      "installed": "Theme pack installed",
+      "applied": "Theme preset applied",
+      "removed": "Theme pack removed"
+    },
+    "errors": {
+      "load": "Theme packs could not be loaded",
+      "install": "Theme pack could not be installed",
+      "apply": "Theme preset could not be applied",
+      "remove": "Theme pack could not be removed"
+    },
+    "status": {
+      "installing": "Installing theme pack",
+      "applying": "Applying theme preset",
+      "removing": "Removing theme pack",
+      "active": "Active theme pack: {{id}}"
     }
   },
   "overlay": {
@@ -689,7 +886,10 @@
     "recorderBlockedWithCulprit": "{{name}} potrebbe bloccare le modifiche alle scorciatoie",
     "recorderBlockedNoCulprit": "macOS sta bloccando temporaneamente le modifiche alle scorciatoie",
     "learnMore": "Come risolvere",
-    "recorderBlocked": "Non è possibile registrare scorciatoie in questo momento: Secure Input di macOS sta bloccando gli eventi dei tasti. Risolvi prima l'avviso di Secure Input.",
+    "recorderBlocked": "Non è possibile registrare scorciatoie in questo momento: Secure Input di macOS sta bloccando gli eventi dei tasti. Risolvi prima l\u0027avviso di Secure Input.",
     "dismiss": "Ignora"
+  },
+  "app": {
+    "name": "LocalDictate"
   }
 }

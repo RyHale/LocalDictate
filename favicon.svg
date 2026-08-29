@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="132" fill="oklch(0.62 0.15 238)" />
+  <g
+    fill="none"
+    stroke="oklch(0.97 0.01 238)"
+    stroke-width="44"
+    stroke-linecap="round"
+  >
+    <path d="M128 280v-48" />
+    <path d="M192 344V168" />
+    <path d="M256 392V120" />
+    <path d="M320 344V168" />
+    <path d="M384 280v-48" />
+  </g>
+</svg>

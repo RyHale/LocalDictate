@@ -5,7 +5,7 @@
   /* Near-opaque app surface (theme.css --color-background at 98%). Auto-flips
      light/dark with --color-background, so no dark-mode override is needed. */
   --s-surface: color-mix(in srgb, var(--color-background) 98%, transparent);
-  /* Accent = logo pink; flips automatically via --color-logo-primary. */
+  /* Accent follows the shared LocalDictate blue token. */
   --s-accent: var(--color-logo-primary);
   /* Light/dark pairs for the tokens that can't flip through a shared palette
      variable on their own. Same shape as theme.css: each value is written once
@@ -25,10 +25,10 @@
   );
   /* Neutrals. muted/faint are overlay-specific secondary/tertiary text grays
      (no theme equivalent). */
-  --light-s-muted: #6e6e6e;
-  --dark-s-muted: #a3a09a;
-  --light-s-faint: #9a9a9a;
-  --dark-s-faint: #6f6c66;
+  --light-s-muted: oklch(0.5 0.01 250);
+  --dark-s-muted: oklch(0.7 0.01 250);
+  --light-s-faint: oklch(0.62 0.008 250);
+  --dark-s-faint: oklch(0.52 0.008 250);
   /* Hairlines reuse the app's mid-gray at low opacity in light — same vocabulary
      as the app's border-mid-gray/* utilities — and flip to the near-white text
      token for contrast on dark. */
@@ -52,6 +52,8 @@
      in sync when these change. */
   --ov-rest-w: 172px; /* resting compact pill (minimal, recording) -- roomy enough
                          for the English working label before the grow starts */
+  --ov-idle-w: 52px; /* always-on ready indicator */
+  --ov-idle-h: 28px;
   --ov-pill-w: 184px; /* base width / Live pill before it opens or collapses */
   --ov-work-w: 216px; /* working pill (transcribing / polishing) -- wide enough to
                          center longer labels; shared by Live (collapsed) + minimal */
@@ -115,6 +117,20 @@
   align-items: flex-start; /* top placement: flush to the top edge */
 }
 
+/* Data-driven themes own the full native overlay canvas. The native window is
+   already placed at the selected screen edge, so this stage only keeps a
+   renderer centered and transparent. Pointer handling is enforced natively
+   from the validated pack manifest. */
+.ov-theme-stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent;
+}
+
 /* Compact pill: fade the whole container in/out (the pill itself never pops or
    morphs). */
 .ov-fade {
@@ -149,8 +165,12 @@
    bottom overlay's top fade. Gated on `.overflowing` so a short resting line
    (sitting at the very top) is never dimmed. */
 .ov-stage.top .stext-cap.overflowing {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    oklch(0.15 0 0) 18px
+  );
+  mask-image: linear-gradient(to bottom, transparent 0, oklch(0.15 0 0) 18px);
 }
 .ov-stage.top .stext-cap p {
   /* Top-anchor short text just under the pill; on overflow the cap still pins to
@@ -204,6 +224,43 @@
   border-radius: 18px;
 }
 
+/* Quiet always-on ready state. The accent microphone and status dot keep it
+   legible against dark apps without turning the utility into a notification. */
+.scard.idle {
+  width: var(--ov-idle-w);
+  height: var(--ov-idle-h);
+  border-radius: 10px;
+  animation: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-color: color-mix(in srgb, var(--color-text) 20%, transparent);
+  transition:
+    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 180ms ease,
+    border-radius 220ms ease;
+}
+.sidle-mic {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: var(--s-accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sidle-mic rect {
+  fill: color-mix(in srgb, var(--s-accent) 14%, transparent);
+}
+.sidle-ready {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--s-accent);
+  box-shadow: 0 0 0 3px var(--s-accent-soft);
+}
+
 /* Compact form: two fixed widths so the recording→working change is an animatable
    width transition (intrinsic max-content can't be transitioned, and every label
    is short enough to fit the resting pill, so content-sizing produced no visible
@@ -249,8 +306,12 @@
   line-height: 1.35;
   letter-spacing: -0.003em;
   color: color-mix(in srgb, var(--color-text) 90%, transparent);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    oklch(0.15 0 0) 18px
+  );
+  mask-image: linear-gradient(to bottom, transparent 0, oklch(0.15 0 0) 18px);
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* legacy Edge */
 }
@@ -459,4 +520,83 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Reduced motion keeps the widget's state legible through color, labels, and
+   geometry while removing every continuous/decorative loop. Brief finite
+   morphs remain so a state change is still easy to follow. */
+:root[data-widget-animation="reduced"] .scard,
+:root[data-widget-animation="reduced"] .sdot,
+:root[data-widget-animation="reduced"] .swave i,
+:root[data-widget-animation="reduced"] .sspinner,
+:root[data-widget-animation="reduced"] .scaret {
+  animation: none;
+}
+
+:root[data-widget-animation="reduced"] .scard,
+:root[data-widget-animation="reduced"] .stext,
+:root[data-widget-animation="reduced"] .ov-fade {
+  transition-duration: 120ms;
+}
+
+:root[data-widget-animation="reduced"] .swave i {
+  height: 6px !important;
+  transition: none;
+}
+
+:root[data-widget-animation="reduced"] .sx:hover,
+:root[data-widget-animation="reduced"] .sx:active {
+  transform: none;
+}
+
+/* Off makes every visual update immediate. Color, text, the static working
+   ring, and the recording dot still communicate the current state. */
+:root[data-widget-animation="off"] .ov-fade,
+:root[data-widget-animation="off"] .scard,
+:root[data-widget-animation="off"] .stext,
+:root[data-widget-animation="off"] .sdot,
+:root[data-widget-animation="off"] .swave i,
+:root[data-widget-animation="off"] .sspinner,
+:root[data-widget-animation="off"] .scaret,
+:root[data-widget-animation="off"] .sx {
+  animation: none;
+  transition: none;
+}
+
+:root[data-widget-animation="off"] .swave i {
+  height: 6px !important;
+}
+
+:root[data-widget-animation="off"] .sx:hover,
+:root[data-widget-animation="off"] .sx:active {
+  transform: none;
+}
+
+/* Respect the operating-system accessibility preference even when the saved
+   widget choice is Full. The in-app Reduced/Off selectors above remain the
+   explicit controls for users who do not use a system-wide preference. */
+@media (prefers-reduced-motion: reduce) {
+  .scard,
+  .sdot,
+  .swave i,
+  .sspinner,
+  .scaret {
+    animation: none;
+  }
+
+  .scard,
+  .stext,
+  .ov-fade {
+    transition-duration: 120ms;
+  }
+
+  .swave i {
+    height: 6px !important;
+    transition: none;
+  }
+
+  .sx:hover,
+  .sx:active {
+    transform: none;
+  }
 }

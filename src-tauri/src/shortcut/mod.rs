@@ -22,8 +22,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
     self, get_settings, AutoSubmitKey, ClipboardHandling, KeyboardImplementation, LLMPrompt,
-    OverlayPosition, OverlayStyle, PasteMethod, ShortcutBinding, SoundTheme, Theme, TypingTool,
-    VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
+    OverlayPosition, OverlayStyle, PasteMethod, ShortcutBinding, Theme, ThemeAccent, TypingTool,
+    UiFontSize, VadBackend, WidgetAnimation, APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
 
@@ -535,42 +535,6 @@ pub fn change_ptt_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn change_audio_feedback_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.audio_feedback = enabled;
-    settings::write_settings(&app, settings);
-    Ok(())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn change_audio_feedback_volume_setting(app: AppHandle, volume: f32) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.audio_feedback_volume = volume;
-    settings::write_settings(&app, settings);
-    Ok(())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn change_sound_theme_setting(app: AppHandle, theme: String) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    let parsed = match theme.as_str() {
-        "marimba" => SoundTheme::Marimba,
-        "pop" => SoundTheme::Pop,
-        "custom" => SoundTheme::Custom,
-        other => {
-            warn!("Invalid sound theme '{}', defaulting to marimba", other);
-            SoundTheme::Marimba
-        }
-    };
-    settings.sound_theme = parsed;
-    settings::write_settings(&app, settings);
-    Ok(())
-}
-
-#[tauri::command]
-#[specta::specta]
 pub fn change_theme_setting(app: AppHandle, theme: String) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     let parsed = match theme.as_str() {
@@ -589,6 +553,59 @@ pub fn change_theme_setting(app: AppHandle, theme: String) -> Result<(), String>
     // Notify other webviews (the recording overlay) so they re-apply the palette
     // live — they set `data-theme` on their own document and can't see this one.
     let _ = app.emit("theme-changed", parsed);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_theme_accent_setting(app: AppHandle, accent: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    let parsed = match accent.as_str() {
+        "blue" => ThemeAccent::Blue,
+        "violet" => ThemeAccent::Violet,
+        "teal" => ThemeAccent::Teal,
+        "rose" => ThemeAccent::Rose,
+        "amber" => ThemeAccent::Amber,
+        other => {
+            warn!("Invalid theme accent '{}', defaulting to blue", other);
+            ThemeAccent::Blue
+        }
+    };
+    settings.theme_accent = parsed;
+    settings::write_settings(&app, settings);
+    let _ = app.emit("theme-accent-changed", parsed);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_ui_font_size_setting(app: AppHandle, size: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    let parsed = match size.as_str() {
+        "small" => UiFontSize::Small,
+        "default" => UiFontSize::Standard,
+        "large" => UiFontSize::Large,
+        other => return Err(format!("Invalid interface font size: {other}")),
+    };
+    settings.ui_font_size = parsed;
+    settings::write_settings(&app, settings);
+    let _ = app.emit("ui-font-size-changed", parsed);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_widget_animation_setting(app: AppHandle, level: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    let parsed = match level.as_str() {
+        "full" => WidgetAnimation::Full,
+        "reduced" => WidgetAnimation::Reduced,
+        "off" => WidgetAnimation::Off,
+        other => return Err(format!("Invalid widget animation level: {other}")),
+    };
+    settings.widget_animation = parsed;
+    settings::write_settings(&app, settings);
+    let _ = app.emit("widget-animation-changed", parsed);
     Ok(())
 }
 
@@ -678,8 +695,9 @@ pub fn change_overlay_style_setting(app: AppHandle, style: String) -> Result<(),
     // resumes) emitting on the next audio callback.
     crate::overlay::update_overlay_enabled_cache(parsed != OverlayStyle::None);
 
-    // Reposition in case the window needs to re-center for the new style.
-    crate::utils::update_overlay_position(&app);
+    // Apply the preference immediately: enabled styles show the compact ready
+    // indicator, while None hides the native overlay window.
+    crate::utils::sync_overlay_visibility(&app);
 
     Ok(())
 }
@@ -729,12 +747,14 @@ pub fn change_start_hidden_setting(app: AppHandle, enabled: bool) -> Result<(), 
 #[tauri::command]
 #[specta::specta]
 pub fn change_autostart_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
+    // Register with the OS first. A failed operation must not be represented as
+    // a saved success, so persistence and frontend notification happen only
+    // after the platform operation completes.
+    crate::autostart::apply_autostart(&app, enabled)?;
+
     let mut settings = settings::get_settings(&app);
     settings.autostart_enabled = enabled;
     settings::write_settings(&app, settings);
-
-    // Apply the autostart setting immediately
-    crate::autostart::apply_autostart(&app, enabled);
 
     // Notify frontend
     let _ = app.emit(
@@ -987,21 +1007,25 @@ pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Res
     settings.post_process_enabled = enabled;
     settings::write_settings(&app, settings.clone());
 
+    reconcile_post_process_shortcut(&app, &settings);
+    Ok(())
+}
+
+pub(crate) fn reconcile_post_process_shortcut(app: &AppHandle, settings: &settings::AppSettings) {
     // Register or unregister the post-processing shortcut
     if let Some(binding) = settings
         .bindings
         .get("transcribe_with_post_process")
         .cloned()
     {
-        if enabled {
-            let _ = register_shortcut(&app, binding);
+        if settings.post_process_enabled {
+            let _ = register_shortcut(app, binding);
         } else {
-            let _ = unregister_shortcut(&app, binding);
+            let _ = unregister_shortcut(app, binding);
         }
     }
 
-    crate::secure_input::reconcile_fallback(&app);
-    Ok(())
+    crate::secure_input::reconcile_fallback(app);
 }
 
 #[tauri::command]

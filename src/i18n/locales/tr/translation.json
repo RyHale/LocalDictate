@@ -16,7 +16,8 @@
     "postProcessing": "Son İşlem",
     "history": "Geçmiş",
     "debug": "Hata Ayıklama",
-    "about": "Hakkında"
+    "about": "Hakkında",
+    "navigation": "Settings sections"
   },
   "onboarding": {
     "subtitle": "Başlamak için bir transkripsiyon modeli seçin",
@@ -101,7 +102,7 @@
     },
     "permissions": {
       "title": "İzinler Gerekli",
-      "description": "Handy'nin düzgün çalışabilmesi için birkaç izne ihtiyacı var.",
+      "description": "Handy\u0027nin düzgün çalışabilmesi için birkaç izne ihtiyacı var.",
       "microphone": {
         "title": "Mikrofon Erişimi",
         "description": "Sesinizi transkripsiyon için alabilmek için gereklidir."
@@ -144,15 +145,32 @@
     "capabilities": {
       "languageSelection": "Birden fazla giriş dilini destekler",
       "languageCount": "{{total}} dil",
-      "translation": "İngilizce'ye çevirebilir",
-      "translate": "İngilizce'ye çevir",
+      "translation": "İngilizce\u0027ye çevirebilir",
+      "translate": "İngilizce\u0027ye çevir",
       "singleLanguage": "Yalnızca bu dili destekler",
       "languageOnly": "Yalnızca {{language}}",
       "streaming": "Konuşurken canlı transkripsiyon gösterir"
     },
     "cancel": "İptal",
     "cancelDownload": "İndirmeyi iptal et",
-    "legacy": "Eski"
+    "legacy": "Eski",
+    "source": "Source",
+    "openSource": "Open model source",
+    "sourceDetails": {
+      "label": "Download source",
+      "huggingFace": "Hugging Face: {{repository}} @ {{revision}}",
+      "directUrl": "Direct URL: {{url}}",
+      "customUrl": "Custom URL: {{url}}",
+      "localFile": "Imported file: {{filename}}",
+      "overridden": "Custom source",
+      "change": "Change",
+      "urlLabel": "Replacement download URL",
+      "urlPlaceholder": "https://models.example/model.gguf",
+      "help": "This changes where LocalDictate downloads this exact model file next time. Catalog checksums still apply, and mismatched files are rejected.",
+      "save": "Use this source",
+      "saving": "Saving...",
+      "restore": "Restore default source"
+    }
   },
   "settings": {
     "modelSettings": {
@@ -167,7 +185,7 @@
       "filters": {
         "allLanguages": "Tüm Diller",
         "streaming": "Canlı transkripsiyonu destekleyen modelleri filtrele",
-        "translation": "İngilizce'ye çeviriyi destekleyen modelleri filtrele"
+        "translation": "İngilizce\u0027ye çeviriyi destekleyen modelleri filtrele"
       },
       "noModelsMatch": "Bu filtreyle eşleşen model yok.",
       "yourModels": "İndirilen Modeller",
@@ -176,6 +194,33 @@
       "rescan": {
         "label": "Yeniden Tara",
         "tooltip": "Handy dışında modeller klasörüne veya Hugging Face önbelleğine eklenen modelleri yeniden tara"
+      },
+      "sources": {
+        "title": "Where models come from",
+        "description": "Catalog models come from pinned revisions in the handy-computer organization on Hugging Face. If Hugging Face is unavailable, LocalDictate tries blob.handy.computer. Catalog files are SHA-256 verified. Every model below lists its exact repository, and you can replace its download URL.",
+        "catalog": "Primary catalog: huggingface.co/handy-computer",
+        "mirror": "Fallback mirror: blob.handy.computer",
+        "changeSuccess": "Model source updated",
+        "changeError": "Model source could not be updated",
+        "restoreSuccess": "Default source restored",
+        "restoreError": "Default source could not be restored"
+      },
+      "custom": {
+        "title": "Use your own model",
+        "description": "Import a local model or link a direct download. LocalDictate supports transcribe.cpp-compatible .gguf and .bin speech models; translation is available when the model advertises it. Each catalog model also shows its download source.",
+        "import": "Import file",
+        "importing": "Importing…",
+        "importDialogTitle": "Import a transcription model",
+        "supportedFiles": "Speech model files",
+        "importSuccess": "Model imported",
+        "importError": "Model could not be imported",
+        "link": "Link URL",
+        "urlLabel": "Direct model download URL",
+        "urlPlaceholder": "https://example.com/speech-model.gguf",
+        "add": "Download model",
+        "linking": "Downloading…",
+        "linkSuccess": "Model linked and downloaded",
+        "linkError": "Model could not be linked"
       }
     },
     "general": {
@@ -209,7 +254,7 @@
       },
       "language": {
         "title": "Dil",
-        "description": "Konuşma tanıma dilini seçin. 'Otomatik' seçeneği dili kendisi belirler, ancak belirli bir dil seçmek o dildeki doğruluğu artırabilir.",
+        "description": "Konuşma tanıma dilini seçin. \u0027Otomatik\u0027 seçeneği dili kendisi belirler, ancak belirli bir dil seçmek o dildeki doğruluğu artırabilir.",
         "searchPlaceholder": "Dil ara...",
         "noResults": "Dil bulunamadı",
         "auto": "Otomatik"
@@ -267,11 +312,11 @@
       "acceleration": {
         "transcribe": {
           "title": "transcribe.cpp Hızlandırması",
-          "description": "transcribe.cpp (Whisper ailesi) modelleri için donanım hızlandırması. Otomatik mod, mevcutsa GPU kullanır (macOS'ta Metal, Windows/Linux'ta Vulkan)."
+          "description": "transcribe.cpp (Whisper ailesi) modelleri için donanım hızlandırması. Otomatik mod, mevcutsa GPU kullanır (macOS\u0027ta Metal, Windows/Linux\u0027ta Vulkan)."
         },
         "ort": {
           "title": "ONNX Hızlandırma",
-          "description": "ONNX modelleri için donanım hızlandırma (Parakeet, Canary, Moonshine vb.). Windows'ta DirectML deneyseldir. Modeller transkripsiyon yapamayabilir."
+          "description": "ONNX modelleri için donanım hızlandırma (Parakeet, Canary, Moonshine vb.). Windows\u0027ta DirectML deneyseldir. Modeller transkripsiyon yapamayabilir."
         },
         "gpuDevice": {
           "auto": "Otomatik"
@@ -292,7 +337,7 @@
       "overlay": {
         "style": {
           "title": "Ekran Katmanı",
-          "description": "Kayıt sırasında gösterilecek ekran katmanını seçin: 'Yok' katmanı gizler, 'Sade' küçük bir gösterge gösterir, 'Canlı' siz konuşurken transkripsiyonu gerçek zamanlı gösterir (yalnızca akış destekli modeller — model seçicide 'Akış' rozetini arayın). Linux'ta 'Yok' önerilir.",
+          "description": "Kayıt sırasında gösterilecek ekran katmanını seçin: \u0027Yok\u0027 katmanı gizler, \u0027Sade\u0027 küçük bir gösterge gösterir, \u0027Canlı\u0027 siz konuşurken transkripsiyonu gerçek zamanlı gösterir (yalnızca akış destekli modeller — model seçicide \u0027Akış\u0027 rozetini arayın). Linux\u0027ta \u0027Yok\u0027 önerilir.",
           "options": {
             "none": "Yok",
             "minimal": "Sade",
@@ -338,7 +383,7 @@
       },
       "autoSubmit": {
         "title": "Otomatik Gönder",
-        "description": "Metin eklendikten sonra seçilen tuş kombinasyonunu otomatik olarak gönderir. macOS'ta Cmd+Enter, Windows/Linux'ta Super+Enter geçerlidir.",
+        "description": "Metin eklendikten sonra seçilen tuş kombinasyonunu otomatik olarak gönderir. macOS\u0027ta Cmd+Enter, Windows/Linux\u0027ta Super+Enter geçerlidir.",
         "options": {
           "off": "Kapalı",
           "enter": "Enter",
@@ -348,8 +393,8 @@
         }
       },
       "translateToEnglish": {
-        "label": "İngilizce'ye Çevir",
-        "description": "Transkripsiyon sırasında diğer dillerden İngilizce'ye otomatik olarak çevirir."
+        "label": "İngilizce\u0027ye Çevir",
+        "description": "Transkripsiyon sırasında diğer dillerden İngilizce\u0027ye otomatik olarak çevirir."
       },
       "modelUnload": {
         "title": "Modeli Boşalt",
@@ -379,7 +424,7 @@
       },
       "vadBackend": {
         "title": "Ses Etkinliği Arka Ucu",
-        "description": "Sessizliği filtrelemek için kullanılan algılayıcıyı seçin. Earshot deneyseldir; konuşma kesiliyorsa veya gürültü korunuyorsa Silero'ya geri dönün.",
+        "description": "Sessizliği filtrelemek için kullanılan algılayıcıyı seçin. Earshot deneyseldir; konuşma kesiliyorsa veya gürültü korunuyorsa Silero\u0027ya geri dönün.",
         "options": {
           "silero": "Silero",
           "earshot": "Earshot"
@@ -398,14 +443,17 @@
         "title": "API (OpenAI Uyumlu)",
         "provider": {
           "title": "Sağlayıcı",
-          "description": "OpenAI uyumlu bir sağlayıcı seçin."
+          "description": "OpenAI uyumlu bir sağlayıcı seçin.",
+          "source": "Connection",
+          "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "appleConnection": "On-device Apple Intelligence"
         },
         "appleIntelligence": {
-          "unavailable": "Apple Intelligence bu cihazda kullanılamıyor. macOS Tahoe (26.0) veya üzeri ve Sistem Ayarları'nda Apple Intelligence etkin olan bir Apple Silicon Mac gerektirir."
+          "unavailable": "Apple Intelligence bu cihazda kullanılamıyor. macOS Tahoe (26.0) veya üzeri ve Sistem Ayarları\u0027nda Apple Intelligence etkin olan bir Apple Silicon Mac gerektirir."
         },
         "baseUrl": {
           "title": "Temel URL",
-          "description": "Seçili sağlayıcı için API temel URL'si. Yalnızca özel sağlayıcı düzenlenebilir.",
+          "description": "Seçili sağlayıcı için API temel URL\u0027si. Yalnızca özel sağlayıcı düzenlenebilir.",
           "placeholder": "https://api.openai.com/v1"
         },
         "apiKey": {
@@ -419,7 +467,20 @@
           "descriptionDefault": "Seçili sağlayıcının sunduğu bir modeli seçin.",
           "placeholderWithOptions": "Model ara veya seç",
           "placeholderNoOptions": "Model adı yazın",
-          "refreshModels": "Modelleri Yenile"
+          "refreshModels": "Modelleri Yenile",
+          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
+          "placeholderCodex": "subscription_default or a Codex model ID"
+        },
+        "description": "Cleanup models are not downloaded by LocalDictate. Transcript text is sent to the selected local CLI or API endpoint. Choose Local or OpenAI-compatible to use Ollama, LM Studio, OpenRouter, or another compatible service.",
+        "codex": {
+          "checking": "Checking the local Codex CLI…",
+          "ready": "Ready — signed in to Codex with ChatGPT.",
+          "notInstalled": "Codex CLI was not found. Install it, then run codex login.",
+          "notAuthenticated": "Codex CLI is not signed in. Run codex login and choose ChatGPT.",
+          "nonChatgptAuthentication": "Codex is using API-key authentication. Run codex logout, then codex login and choose ChatGPT so this uses your subscription.",
+          "error": "LocalDictate could not verify Codex. Raw dictation still works.",
+          "privacy": "Raw dictation stays on this PC. Polished dictation sends only the transcript and cleanup instructions to OpenAI through your signed-in Codex CLI. If cleanup fails, LocalDictate pastes the raw transcript.",
+          "refresh": "Check again"
         }
       },
       "prompts": {
@@ -435,13 +496,34 @@
         "promptLabelPlaceholder": "Prompt adı girin",
         "promptInstructions": "Prompt Talimatları",
         "promptInstructionsPlaceholder": "Transkripsiyondan sonra çalıştırılacak talimatları yazın. Örnek: Aşağıdaki metnin dilbilgisini ve açıklığını iyileştir: ${output}",
-        "promptTip": "İpucu: Transkribe edilen metni promptunuza eklemek için <code>${output}</code> kullanın.",
+        "promptTip": "İpucu: Transkribe edilen metni promptunuza eklemek için \u003ccode\u003e${output}\u003c/code\u003e kullanın.",
         "updatePrompt": "Promptu Güncelle",
         "deletePrompt": "Promptu Sil",
         "createPrompt": "Prompt Oluştur",
         "cancel": "İptal",
         "selectToEdit": "Ayrıntılarını görüntülemek ve düzenlemek için yukarıdan bir prompt seçin.",
-        "createFirst": "İlk son işlem promptunuzu oluşturmak için yukarıdaki “Yeni Prompt Oluştur” seçeneğine tıklayın."
+        "createFirst": "İlk son işlem promptunuzu oluşturmak için yukarıdaki “Yeni Prompt Oluştur” seçeneğine tıklayın.",
+        "description": "Create reusable cleanup instructions, then switch profiles from the footer before dictating.",
+        "profile": "Cleanup profile",
+        "libraryTitle": "Your profiles",
+        "libraryDescription": "{{count}} profiles available. The selected profile is used by the post-processing shortcut.",
+        "newTitle": "Create a cleanup profile",
+        "newDescription": "Give the profile a clear name and describe exactly how it should transform your dictation.",
+        "editTitle": "Edit selected profile",
+        "editDescription": "Changes apply the next time this profile is used.",
+        "duplicatePrompt": "Duplicate",
+        "keepOne": "At least one cleanup profile is required.",
+        "copyName": "{{name}} copy",
+        "deleteTitle": "Delete cleanup profile",
+        "deleteConfirm": "Delete the cleanup profile \u0027{{name}}\u0027?",
+        "created": "Cleanup profile created",
+        "createError": "Cleanup profile could not be created",
+        "updated": "Cleanup profile saved",
+        "updateError": "Cleanup profile could not be saved",
+        "duplicated": "Cleanup profile duplicated",
+        "duplicateError": "Cleanup profile could not be duplicated",
+        "deleted": "Cleanup profile deleted",
+        "deleteError": "Cleanup profile could not be deleted"
       }
     },
     "history": {
@@ -555,8 +637,8 @@
       },
       "keyboardDiagnostic": {
         "title": "Klavye Tanılaması",
-        "description": "Klavye olaylarının Handy'ye ulaşıp ulaşmadığını denetler. Yalnızca olay sayıları kaydedilir — hangi tuşlara bastığınız asla kaydedilmez.",
-        "run": "10 sn'lik tanılamayı çalıştır",
+        "description": "Klavye olaylarının Handy\u0027ye ulaşıp ulaşmadığını denetler. Yalnızca olay sayıları kaydedilir — hangi tuşlara bastığınız asla kaydedilmez.",
+        "run": "10 sn\u0027lik tanılamayı çalıştır",
         "running": "Dinleniyor… kısayolunuza birkaç kez basın (ör. Option+Space)",
         "secureInputLabel": "Secure Input",
         "enabled": "etkin",
@@ -568,8 +650,8 @@
         "flagsChanged": "Değiştiriciler",
         "mouse": "Fare",
         "verdictBlocked": "Secure Input tuş olaylarını engelliyor — normal tuş içeren kısayollar bu sorun çözülene kadar çalışamaz.",
-        "verdictSuspicious": "Değiştirici olayları geldi ancak hiç tuş olayı gelmedi — Secure Input devre dışı görünmesine rağmen bir şey tuşları bastırıyor. Lütfen bunu GitHub'da bildirin.",
-        "verdictOk": "Tuş olayları Handy'ye normal şekilde ulaşıyor.",
+        "verdictSuspicious": "Değiştirici olayları geldi ancak hiç tuş olayı gelmedi — Secure Input devre dışı görünmesine rağmen bir şey tuşları bastırıyor. Lütfen bunu GitHub\u0027da bildirin.",
+        "verdictOk": "Tuş olayları Handy\u0027ye normal şekilde ulaşıyor.",
         "verdictNoEvents": "Hiç olay yakalanmadı — test sırasında herhangi bir tuşa bastınız mı?",
         "failed": "Tanılama başarısız: {{error}}"
       },
@@ -585,20 +667,20 @@
       "title": "Hakkında",
       "version": {
         "title": "Sürüm",
-        "description": "Handy'nin mevcut sürümü"
+        "description": "Handy\u0027nin mevcut sürümü"
       },
       "appDataDirectory": {
         "title": "Uygulama Veri Dizini",
-        "description": "Handy'nin verilerini sakladığı konum"
+        "description": "Handy\u0027nin verilerini sakladığı konum"
       },
       "sourceCode": {
         "title": "Kaynak Kodu",
         "description": "Kaynak kodunu görüntüle ve katkıda bulun",
-        "button": "GitHub'da Görüntüle"
+        "button": "GitHub\u0027da Görüntüle"
       },
       "supportDevelopment": {
         "title": "Geliştirmeyi Destekle",
-        "description": "Handy'yi geliştirmeye devam etmemize yardımcı olun",
+        "description": "Handy\u0027yi geliştirmeye devam etmemize yardımcı olun",
         "button": "Bağış Yap"
       },
       "acknowledgments": {
@@ -606,7 +688,7 @@
         "ggml": {
           "title": "ggml",
           "description": "Cihaz üzerinde makine öğrenmesi çıkarımı için yüksek performanslı tensör kütüphanesi",
-          "details": "Handy'nin yerel konuşmadan metne dönüştürme özelliği transcribe.cpp ve ggml üzerine kuruludur. Georgi Gerganov'a ve katkıda bulunanlara harika çalışmaları için teşekkür ederiz."
+          "details": "Handy\u0027nin yerel konuşmadan metne dönüştürme özelliği transcribe.cpp ve ggml üzerine kuruludur. Georgi Gerganov\u0027a ve katkıda bulunanlara harika çalışmaları için teşekkür ederiz."
         }
       },
       "whatsNewUpdates": {
@@ -637,7 +719,8 @@
     "open": "Aç",
     "copy": "Kopyala",
     "clear": "Temizle",
-    "noOptionsFound": "Seçenek bulunamadı"
+    "noOptionsFound": "Seçenek bulunamadı",
+    "cancel": "Cancel"
   },
   "accessibility": {
     "permissionsDescription": "Handy, transkribe edilen metni yazabilmek için erişilebilirlik izinlerine ihtiyaç duyar.",
@@ -667,11 +750,125 @@
   },
   "theme": {
     "title": "Uygulama Teması",
-    "description": "Handy'nin sistem temasını izlemesini ya da açık veya koyu kalmasını seçin",
+    "description": "Handy\u0027nin sistem temasını izlemesini ya da açık veya koyu kalmasını seçin",
     "options": {
       "system": "Sistem",
       "light": "Açık",
       "dark": "Koyu"
+    },
+    "accentTitle": "Accent Color",
+    "accentDescription": "Choose the color used for active controls and processing state",
+    "accents": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "teal": "Teal",
+      "rose": "Rose",
+      "amber": "Amber"
+    }
+  },
+  "appearance": {
+    "title": "Appearance",
+    "interfaceTitle": "Interface",
+    "widgetTitle": "On-screen Widget",
+    "fontSize": {
+      "title": "Text Size",
+      "description": "Adjust the text size throughout the LocalDictate settings window",
+      "options": {
+        "small": "Small",
+        "default": "Default",
+        "large": "Large"
+      }
+    },
+    "widgetAnimation": {
+      "title": "Animations",
+      "description": "Choose how much motion the on-screen recording widget uses. Reduced and Off keep clear state cues.",
+      "options": {
+        "full": "Full",
+        "reduced": "Reduced",
+        "off": "Off"
+      }
+    }
+  },
+  "themePacks": {
+    "appearanceTitle": "Appearance",
+    "title": "Theme Packs",
+    "description": "Discover and manage visual overlay packs and bundled presets.",
+    "loading": "Loading theme packs...",
+    "count_one": "{{count}} theme available",
+    "count_other": "{{count}} themes available",
+    "empty": "No theme packs are available.",
+    "applied": "Applied",
+    "codeTheme": "Code theme",
+    "byAuthor": "By {{author}}",
+    "previewAlt": "Preview of {{name}}",
+    "classicPreview": "Classic microphone and waveform overlay preview",
+    "previewUnavailable": "Preview unavailable",
+    "dimensions": "{{width}} x {{height}}",
+    "importDialogTitle": "Choose a theme pack directory",
+    "preset": {
+      "title": "Theme packs are one-time presets",
+      "description": "Applying a pack can change its overlay, app appearance, accent, and cleanup profile. Afterward, every setting remains independent and editable; the pack will not silently reapply itself."
+    },
+    "metadata": {
+      "renderer": "Renderer",
+      "canvas": "Canvas"
+    },
+    "features": {
+      "title": "Preset includes",
+      "overlay": "Overlay",
+      "appearance": "Appearance",
+      "sounds": "Sounds",
+      "cleanup": "Cleanup profile"
+    },
+    "sources": {
+      "classic": "Built in",
+      "bundled": "Bundled",
+      "installed": "Installed"
+    },
+    "renderers": {
+      "classic": "Classic controls",
+      "reactive-image": "Reactive image",
+      "sprite": "Sprite animation",
+      "particles": "Particles",
+      "web": "Web code"
+    },
+    "actions": {
+      "install": "Install from folder",
+      "installing": "Installing...",
+      "refresh": "Refresh",
+      "apply": "Apply preset",
+      "applying": "Applying...",
+      "applied": "Applied",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "cancel": "Cancel"
+    },
+    "trust": {
+      "cardWarning": "This theme contains executable visual code. Keep it only if you trust its author and source.",
+      "confirmTitle": "Trust and install code theme?",
+      "confirmDescription": "This pack contains executable theme code. Theme code is intended to run in a restricted overlay, but no code from an unknown source should be assumed safe. Install only if you trust the pack's author and where you obtained it.",
+      "installCode": "Trust and install"
+    },
+    "remove": {
+      "confirmTitle": "Remove theme pack?",
+      "confirmDescription": "Remove {{name}} from this device? If it is active, LocalDictate will return to the Classic overlay without undoing the individual settings its preset changed."
+    },
+    "success": {
+      "installed": "Theme pack installed",
+      "applied": "Theme preset applied",
+      "removed": "Theme pack removed"
+    },
+    "errors": {
+      "load": "Theme packs could not be loaded",
+      "install": "Theme pack could not be installed",
+      "apply": "Theme preset could not be applied",
+      "remove": "Theme pack could not be removed"
+    },
+    "status": {
+      "installing": "Installing theme pack",
+      "applying": "Applying theme preset",
+      "removing": "Removing theme pack",
+      "active": "Active theme pack: {{id}}"
     }
   },
   "overlay": {
@@ -691,5 +888,8 @@
     "learnMore": "Bu nasıl düzeltilir",
     "recorderBlocked": "Şu anda kısayol kaydedilemiyor — macOS Secure Input tuş olaylarını engelliyor. Önce Secure Input uyarısını giderin.",
     "dismiss": "Kapat"
+  },
+  "app": {
+    "name": "LocalDictate"
   }
 }

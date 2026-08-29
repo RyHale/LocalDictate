@@ -10,6 +10,7 @@ type PostProcessProviderState = {
   selectedProvider: PostProcessProvider | undefined;
   isCustomProvider: boolean;
   isAppleProvider: boolean;
+  isCodexProvider: boolean;
   appleIntelligenceUnavailable: boolean;
   baseUrl: string;
   handleBaseUrlChange: (value: string) => void;
@@ -29,6 +30,7 @@ type PostProcessProviderState = {
 };
 
 const APPLE_PROVIDER_ID = "apple_intelligence";
+const CODEX_PROVIDER_ID = "codex_cli";
 
 export const usePostProcessProviderState = (): PostProcessProviderState => {
   const {
@@ -57,6 +59,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   }, [providers, selectedProviderId]);
 
   const isAppleProvider = selectedProvider?.id === APPLE_PROVIDER_ID;
+  const isCodexProvider = selectedProvider?.id === CODEX_PROVIDER_ID;
   const [appleIntelligenceUnavailable, setAppleIntelligenceUnavailable] =
     useState(false);
 
@@ -96,7 +99,10 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
       // a previous provider/base_url can persist and silently 404 at runtime.
       // Skip when the provider isn't configured yet (no API key / empty base URL)
       // to avoid unnecessary backend errors.
-      if (providerId !== APPLE_PROVIDER_ID) {
+      if (
+        providerId !== APPLE_PROVIDER_ID &&
+        providerId !== CODEX_PROVIDER_ID
+      ) {
         const provider = providers.find((p) => p.id === providerId);
         const apiKey = settings?.post_process_api_keys?.[providerId] ?? "";
         const hasBaseUrl = (provider?.base_url ?? "").trim() !== "";
@@ -164,9 +170,14 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   );
 
   const handleRefreshModels = useCallback(() => {
-    if (isAppleProvider) return;
+    if (isAppleProvider || isCodexProvider) return;
     void fetchPostProcessModels(selectedProviderId);
-  }, [fetchPostProcessModels, isAppleProvider, selectedProviderId]);
+  }, [
+    fetchPostProcessModels,
+    isAppleProvider,
+    isCodexProvider,
+    selectedProviderId,
+  ]);
 
   const availableModelsRaw = postProcessModelOptions[selectedProviderId] || [];
 
@@ -215,6 +226,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     selectedProvider,
     isCustomProvider,
     isAppleProvider,
+    isCodexProvider,
     appleIntelligenceUnavailable,
     baseUrl,
     handleBaseUrlChange,

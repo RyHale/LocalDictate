@@ -29,6 +29,36 @@ bun run build      # Build frontend (TypeScript + Vite)
 bun run preview    # Preview built frontend
 ```
 
+### Tauri development lifecycle — mandatory
+
+- On Windows, start the desktop app with `scripts/windows.ps1 dev`. On other
+  platforms, use `bun run tauri dev`. These commands own both Vite and the Tauri
+  process and must remain running together.
+- Never launch, pin, register for autostart, or tell the user to launch
+  `src-tauri/target/debug/localdictate.exe` after `tauri dev`. That executable is
+  server-dependent and loads `http://localhost:1420`; without Vite, WebView2
+  displays a Microsoft Edge connection-error page.
+- A persistent or daily-use Windows handoff must use the installed NSIS release
+  built by `scripts/windows.ps1 build`. Never point a taskbar pin, desktop or
+  Startup shortcut, Windows Run entry, or restart workflow at any executable
+  under `target/debug`.
+- Before starting a Windows dev session or declaring this lifecycle repaired,
+  run `scripts/windows.ps1 doctor`. It must report that no persistent launcher
+  targets `target/debug`; fixing only the currently running process or Run key
+  is insufficient because taskbar pins are independent launchers.
+- Do not treat `target/debug/localdictate.exe` as a stable standalone build.
+  `tauri dev` and `tauri build --debug --no-bundle` can overwrite the same path
+  with binaries that have different frontend-loading behavior.
+- When ending or restarting a Windows dev session, stop the owning dev command
+  and verify both conditions: no workspace `target/debug/localdictate.exe`
+  process remains, and port 1420 is no longer listening. When handing a running
+  app back to the user, verify the inverse: Vite is listening on 1420 and the app
+  process is a child of the Tauri/Cargo dev runner rather than Explorer.
+- Do not run bare Cargo commands on Windows for this repository. Use
+  `scripts/windows.ps1 check` or `scripts/windows.ps1 test` so CMake, Vulkan,
+  MSVC, and linker settings stay consistent and do not invalidate the native
+  build cache.
+
 **Linting and Formatting (run before committing):**
 
 ```bash

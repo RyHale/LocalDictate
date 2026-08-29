@@ -1,5 +1,11 @@
 # Contributing to Handy
 
+> **Upstream reference:** This guide is inherited from the Handy project and is
+> retained for provenance and for changes intended for upstream. LocalDictate
+> issues and discussions belong at
+> <https://github.com/RyHale/LocalDictate>. The upstream feature-freeze and
+> maintainer policies below do not automatically govern LocalDictate.
+
 Thank you for your interest in contributing to Handy! This guide will help you get started with contributing to this open source speech-to-text application.
 
 ## ⚠️ Feature Freeze

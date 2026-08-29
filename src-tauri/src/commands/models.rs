@@ -2,6 +2,8 @@ use crate::managers::model::{ModelInfo, ModelManager};
 use crate::managers::transcription::{ModelStateEvent, TranscriptionManager};
 use crate::settings::{get_settings, write_settings, ModelUnloadTimeout};
 use log::error;
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -34,6 +36,62 @@ pub async fn rescan_local_models(
         .await
         .map_err(|e| format!("rescan task panicked: {e}"))?
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn import_transcription_model(
+    model_manager: State<'_, Arc<ModelManager>>,
+    source_path: String,
+) -> Result<ModelInfo, String> {
+    let manager = model_manager.inner().clone();
+    tokio::task::spawn_blocking(move || manager.import_model_file(&PathBuf::from(source_path)))
+        .await
+        .map_err(|error| format!("Import task stopped unexpectedly: {error}"))?
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn link_transcription_model(
+    model_manager: State<'_, Arc<ModelManager>>,
+    url: String,
+) -> Result<ModelInfo, String> {
+    model_manager
+        .link_model_from_url(url.trim())
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_model_source_overrides(
+    model_manager: State<'_, Arc<ModelManager>>,
+) -> Result<HashMap<String, String>, String> {
+    Ok(model_manager.get_model_source_overrides())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_model_source_override(
+    model_manager: State<'_, Arc<ModelManager>>,
+    model_id: String,
+    url: String,
+) -> Result<(), String> {
+    model_manager
+        .set_model_source_override(&model_id, &url)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn clear_model_source_override(
+    model_manager: State<'_, Arc<ModelManager>>,
+    model_id: String,
+) -> Result<(), String> {
+    model_manager
+        .clear_model_source_override(&model_id)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -160,13 +218,14 @@ pub fn switch_active_model(app: &AppHandle, model_id: &str) -> Result<(), String
 
 #[tauri::command]
 #[specta::specta]
-pub async fn set_active_model(
-    app_handle: AppHandle,
-    _model_manager: State<'_, Arc<ModelManager>>,
-    _transcription_manager: State<'_, Arc<TranscriptionManager>>,
-    model_id: String,
-) -> Result<(), String> {
-    switch_active_model(&app_handle, &model_id)
+pub async fn set_active_model(app_handle: AppHandle, model_id: String) -> Result<(), String> {
+    // Loading a model performs synchronous native work (GGUF parsing, memory
+    // mapping, and accelerator setup). Keep it off Tauri's async worker: some
+    // native backends can stall that command indefinitely when run directly
+    // inside the async handler, leaving the selector stuck in "loading".
+    tauri::async_runtime::spawn_blocking(move || switch_active_model(&app_handle, &model_id))
+        .await
+        .map_err(|error| format!("Model loading task failed: {error}"))?
 }
 
 #[tauri::command]

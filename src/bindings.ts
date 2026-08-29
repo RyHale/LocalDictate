@@ -29,33 +29,33 @@ async changePttSetting(enabled: boolean) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changeAudioFeedbackSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_audio_feedback_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeAudioFeedbackVolumeSetting(volume: number) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_audio_feedback_volume_setting", { volume }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeSoundThemeSetting(theme: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_sound_theme_setting", { theme }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeThemeSetting(theme: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_theme_setting", { theme }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeThemeAccentSetting(accent: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_theme_accent_setting", { accent }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeUiFontSizeSetting(size: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ui_font_size_setting", { size }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeWidgetAnimationSetting(level: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_widget_animation_setting", { level }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -470,6 +470,46 @@ async changeTranscribeGpuDevice(device: string | null) : Promise<Result<null, st
 async getAvailableAccelerators() : Promise<AvailableAccelerators> {
     return await TAURI_INVOKE("get_available_accelerators");
 },
+async listThemePacks() : Promise<Result<ThemePackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_theme_packs") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async installThemePack(sourcePath: string, trustCode: boolean) : Promise<Result<ThemePackInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("install_theme_pack", { sourcePath, trustCode }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeThemePack(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_theme_pack", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async applyThemePack(id: string) : Promise<Result<ThemePackInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_theme_pack", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getActiveThemePack() : Promise<Result<ThemePackInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_active_theme_pack") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Start key recording mode
  */
@@ -498,14 +538,6 @@ async getSecureInputStatus() : Promise<SecureInputStatus> {
 async runKeyboardDiagnostic(durationSecs: number | null) : Promise<Result<KeyboardDiagnosticReport, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("run_keyboard_diagnostic", { durationSecs }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async triggerUpdateCheck() : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("trigger_update_check") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -595,6 +627,9 @@ async openAppDataDir() : Promise<Result<null, string>> {
  */
 async checkAppleIntelligenceAvailable() : Promise<boolean> {
     return await TAURI_INVOKE("check_apple_intelligence_available");
+},
+async getCodexCliStatus() : Promise<CodexCliStatus> {
+    return await TAURI_INVOKE("get_codex_cli_status");
 },
 /**
  * Try to initialize Enigo (keyboard/mouse simulation).
@@ -705,6 +740,46 @@ async rescanLocalModels() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async importTranscriptionModel(sourcePath: string) : Promise<Result<ModelInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("import_transcription_model", { sourcePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async linkTranscriptionModel(url: string) : Promise<Result<ModelInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("link_transcription_model", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getModelSourceOverrides() : Promise<Result<Partial<{ [key in string]: string }>, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_model_source_overrides") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setModelSourceOverride(modelId: string, url: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_model_source_override", { modelId, url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearModelSourceOverride(modelId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_model_source_override", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async updateMicrophoneMode(alwaysOn: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("update_microphone_mode", { alwaysOn }) };
@@ -755,36 +830,6 @@ async getSelectedMicrophone() : Promise<Result<string, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
-},
-async getAvailableOutputDevices() : Promise<Result<AudioDevice[], string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_available_output_devices") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async setSelectedOutputDevice(deviceName: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_selected_output_device", { deviceName }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getSelectedOutputDevice() : Promise<Result<string, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_selected_output_device") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playTestSound(soundType: string) : Promise<void> {
-    await TAURI_INVOKE("play_test_sound", { soundType });
-},
-async checkCustomSounds() : Promise<CustomSounds> {
-    return await TAURI_INVOKE("check_custom_sounds");
 },
 async setClamshellMicrophone(deviceName: string) : Promise<Result<null, string>> {
     try {
@@ -897,10 +942,8 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
 }
 },
 /**
- * Checks if the Mac is a laptop by detecting battery presence
- * 
- * This uses pmset to check for battery information.
- * Returns true if a battery is detected (laptop), false otherwise (desktop)
+ * Stub implementation for non-macOS platforms
+ * Always returns false since laptop detection is macOS-specific
  */
 async isLaptop() : Promise<Result<boolean, string>> {
     try {
@@ -949,7 +992,7 @@ settings_schema_version?: number;
  * Defaults to empty on partial stores; the load path merges in the
  * default bindings for any missing keys before the settings are used.
  */
-bindings?: Partial<{ [key in string]: ShortcutBinding }>; push_to_talk?: boolean; audio_feedback?: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; show_whats_new_on_update?: boolean; 
+bindings?: Partial<{ [key in string]: ShortcutBinding }>; push_to_talk?: boolean; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; show_whats_new_on_update?: boolean;
 /**
  * The app version whose What's New the user has already seen. Fresh installs
  * default to the current version (nothing is "new" to them). Existing users
@@ -961,7 +1004,12 @@ whats_new_last_seen_version?: string; selected_model?: string; onboarding_comple
  * Which input channel to use on the selected microphone device.
  * None means "average all channels" (original behavior).
  */
-selected_channel?: number | null; clamshell_microphone?: string | null; selected_output_device?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; paste_delay_after_ms?: number; 
+selected_channel?: number | null; clamshell_microphone?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; theme_accent?: ThemeAccent; ui_font_size?: UiFontSize; widget_animation?: WidgetAnimation;
+/**
+ * Selected visual/preset pack. Underlying appearance and post-processing
+ * settings remain independently editable after applying it.
+ */
+active_theme_pack?: string; experimental_enabled?: boolean; lazy_stream_close?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; paste_delay_after_ms?: number;
 /**
  * Debug-gated ("beta") receipt-sequenced paste: restore the clipboard only
  * after the target app actually reads the transcript, instead of after a
@@ -989,7 +1037,8 @@ export type AutoSubmitKey = "enter" | "ctrl_enter" | "cmd_enter"
 export type AvailableAccelerators = { transcribe: string[]; ort: string[]; gpu_devices: GpuDeviceOption[] }
 export type BindingResponse = { success: boolean; binding: ShortcutBinding | null; error: string | null }
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
-export type CustomSounds = { start: boolean; stop: boolean }
+export type CodexCliState = "ready" | "not_installed" | "not_authenticated" | "non_chatgpt_authentication" | "error"
+export type CodexCliStatus = { state: CodexCliState; version: string | null }
 export type EngineType = 
 /**
  * Any GGML/GGUF model loaded through transcribe-cpp (Whisper, Parakeet,
@@ -1008,6 +1057,7 @@ export type ImplementationChangeResult = { success: boolean;
  * List of binding IDs that were reset to defaults due to incompatibility
  */
 reset_bindings: string[] }
+export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 export type KeyboardDiagnosticReport = { secure_input_enabled: boolean; culprit_pid: number | null; culprit_name: string | null; 
 /**
  * Counts only — key identity is deliberately never captured.
@@ -1091,7 +1141,6 @@ uncovered_bindings: string[];
  */
 recorder_blocked: boolean }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
-export type SoundTheme = "marimba" | "pop" | "custom"
 /**
  * Phase of the streaming overlay card, emitted to drive its UI state.
  */
@@ -1129,9 +1178,40 @@ export type StreamWorkKind = "transcribing" | "polishing"
  * and `Dark` force one of the two palettes Handy already ships.
  */
 export type Theme = "system" | "light" | "dark"
+/**
+ * Accent color used for interactive controls and live processing state. The
+ * neutral light/dark palettes stay unchanged so this remains a restrained
+ * product theme rather than recoloring every surface.
+ */
+export type ThemeAccent = "blue" | "violet" | "teal" | "rose" | "amber"
+export type ThemeOverlayAnchor = "top-left" | "top-center" | "top-right" | "center-left" | "center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right"
+export type ThemeOverlayManifest = { renderer: ThemeRenderer; width: number; height: number; anchor: ThemeOverlayAnchor; pointerMode: ThemePointerMode; config?: JsonValue }
+export type ThemePackInfo = { manifest: ThemePackManifest;
+/**
+ * Absolute filesystem root. The frontend turns child paths into asset URLs.
+ */
+root: string; source: ThemePackSource; active: boolean; codeTheme: boolean }
+export type ThemePackManifest = { schemaVersion: number; id: string; name: string; description: string; author: string; preview: string; overlay: ThemeOverlayManifest; preset?: ThemePreset }
+export type ThemePackSource = "classic" | "bundled" | "installed"
+export type ThemePointerMode = "passthrough" | "interactive"
+export type ThemePostProcessProfile = { id: string; name: string; prompt: string }
+export type ThemePostProcessingPreset = { enabled: boolean; profile?: ThemePostProcessProfile | null }
+export type ThemePreset = { appearance?: Theme | null; accent?: ThemeAccent | null; postProcessing?: ThemePostProcessingPreset | null }
+export type ThemeRenderer = "classic" | "reactive-image" | "sprite" | "particles" | "web"
 export type TranscribeAcceleratorSetting = "auto" | "cpu" | "gpu"
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
+/**
+ * Base text scale for the settings interface. The serialized `default` value
+ * preserves the existing 15 px UI while offering restrained adjacent sizes.
+ */
+export type UiFontSize = "small" | "default" | "large"
 export type VadBackend = "silero" | "earshot"
+/**
+ * Motion level for the on-screen recording widget. Reduced motion keeps
+ * immediate state changes but removes continuous/decorative animation; Off
+ * also removes transition animation.
+ */
+export type WidgetAnimation = "full" | "reduced" | "off"
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }
 
 /** tauri-specta globals **/

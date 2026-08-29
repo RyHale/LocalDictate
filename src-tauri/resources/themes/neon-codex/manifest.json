@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "neon-codex",
+  "name": "Neon Codex",
+  "description": "A hovering sci-fi codex that brightens and breathes with your voice.",
+  "author": "LocalDictate",
+  "preview": "preview.png",
+  "overlay": {
+    "renderer": "reactive-image",
+    "width": 360,
+    "height": 300,
+    "anchor": "bottom-center",
+    "pointerMode": "passthrough",
+    "config": {
+      "layers": [
+        {
+          "asset": "assets/codex.png",
+          "x": 180,
+          "y": {
+            "source": "energy",
+            "input": [0, 1],
+            "output": [158, 148],
+            "easing": "ease-out"
+          },
+          "width": 310,
+          "height": 261,
+          "scale": {
+            "source": "energy",
+            "input": [0, 1],
+            "output": [0.88, 1.04],
+            "easing": "ease-out"
+          },
+          "opacity": {
+            "source": "energy",
+            "output": [0.78, 1]
+          },
+          "glow": {
+            "color": "#56e7ff",
+            "radius": {
+              "source": "energy",
+              "output": [8, 30],
+              "easing": "ease-out"
+            },
+            "opacity": {
+              "source": "energy",
+              "output": [0.2, 0.95]
+            }
+          },
+          "anchor": "center"
+        }
+      ]
+    }
+  },
+  "preset": {
+    "appearance": "dark",
+    "accent": "violet",
+    "postProcessing": {
+      "enabled": true,
+      "profile": {
+        "id": "theme:neon-codex",
+        "name": "Codex polish",
+        "prompt": "Turn the raw dictation into crisp, technically precise prose. Preserve every fact, proper noun, number, code identifier, and requested structure. Remove filler and false starts without inventing information. Return only the polished text."
+      }
+    }
+  }
+}

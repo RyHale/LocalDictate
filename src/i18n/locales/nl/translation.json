@@ -16,7 +16,8 @@
     "postProcessing": "Naverwerking",
     "history": "Geschiedenis",
     "debug": "Probleemoplossing",
-    "about": "Over Handy"
+    "about": "Over Handy",
+    "navigation": "Settings sections"
   },
   "onboarding": {
     "subtitle": "Kies een transcriptiemodel om aan de slag te gaan",
@@ -152,6 +153,23 @@
       "translation": "Kan vertalen naar het Engels",
       "translate": "Vertalen",
       "streaming": "Toont live transcriptie tijdens het spreken"
+    },
+    "source": "Source",
+    "openSource": "Open model source",
+    "sourceDetails": {
+      "label": "Download source",
+      "huggingFace": "Hugging Face: {{repository}} @ {{revision}}",
+      "directUrl": "Direct URL: {{url}}",
+      "customUrl": "Custom URL: {{url}}",
+      "localFile": "Imported file: {{filename}}",
+      "overridden": "Custom source",
+      "change": "Change",
+      "urlLabel": "Replacement download URL",
+      "urlPlaceholder": "https://models.example/model.gguf",
+      "help": "This changes where LocalDictate downloads this exact model file next time. Catalog checksums still apply, and mismatched files are rejected.",
+      "save": "Use this source",
+      "saving": "Saving...",
+      "restore": "Restore default source"
     }
   },
   "settings": {
@@ -189,7 +207,7 @@
       },
       "language": {
         "title": "Taal",
-        "description": "Selecteer de taal voor spraakherkenning. 'Automatisch' detecteert de taal vanzelf, terwijl het kiezen van een specifieke taal de nauwkeurigheid voor die taal kan verbeteren.",
+        "description": "Selecteer de taal voor spraakherkenning. \u0027Automatisch\u0027 detecteert de taal vanzelf, terwijl het kiezen van een specifieke taal de nauwkeurigheid voor die taal kan verbeteren.",
         "searchPlaceholder": "Talen zoeken...",
         "noResults": "Geen talen gevonden",
         "auto": "Automatisch"
@@ -217,7 +235,34 @@
         "label": "Opnieuw scannen",
         "tooltip": "Scannen naar modellen die buiten Handy om zijn toegevoegd aan de modellenmap of Hugging Face-cache"
       },
-      "noModelsMatch": "Geen modellen voldoen aan dit filter."
+      "noModelsMatch": "Geen modellen voldoen aan dit filter.",
+      "sources": {
+        "title": "Where models come from",
+        "description": "Catalog models come from pinned revisions in the handy-computer organization on Hugging Face. If Hugging Face is unavailable, LocalDictate tries blob.handy.computer. Catalog files are SHA-256 verified. Every model below lists its exact repository, and you can replace its download URL.",
+        "catalog": "Primary catalog: huggingface.co/handy-computer",
+        "mirror": "Fallback mirror: blob.handy.computer",
+        "changeSuccess": "Model source updated",
+        "changeError": "Model source could not be updated",
+        "restoreSuccess": "Default source restored",
+        "restoreError": "Default source could not be restored"
+      },
+      "custom": {
+        "title": "Use your own model",
+        "description": "Import a local model or link a direct download. LocalDictate supports transcribe.cpp-compatible .gguf and .bin speech models; translation is available when the model advertises it. Each catalog model also shows its download source.",
+        "import": "Import file",
+        "importing": "Importing…",
+        "importDialogTitle": "Import a transcription model",
+        "supportedFiles": "Speech model files",
+        "importSuccess": "Model imported",
+        "importError": "Model could not be imported",
+        "link": "Link URL",
+        "urlLabel": "Direct model download URL",
+        "urlPlaceholder": "https://example.com/speech-model.gguf",
+        "add": "Download model",
+        "linking": "Downloading…",
+        "linkSuccess": "Model linked and downloaded",
+        "linkError": "Model could not be linked"
+      }
     },
     "sound": {
       "title": "Geluid",
@@ -267,7 +312,7 @@
       "acceleration": {
         "transcribe": {
           "title": "transcribe.cpp-versnelling",
-          "description": "Hardwareversnelling voor transcribe.cpp-modellen (Whisper-familie). 'Automatisch' gebruikt de GPU indien beschikbaar (Metal op macOS, Vulkan op Windows/Linux)."
+          "description": "Hardwareversnelling voor transcribe.cpp-modellen (Whisper-familie). \u0027Automatisch\u0027 gebruikt de GPU indien beschikbaar (Metal op macOS, Vulkan op Windows/Linux)."
         },
         "ort": {
           "title": "ONNX-versnelling",
@@ -292,7 +337,7 @@
       "overlay": {
         "style": {
           "title": "Overlay",
-          "description": "Kies de opname-overlay: 'Geen' verbergt deze, 'Minimaal' toont een compacte balk, 'Live' toont de tekst in realtime tijdens het spreken (alleen voor streaming-modellen). Op Linux wordt 'Geen' aanbevolen.",
+          "description": "Kies de opname-overlay: \u0027Geen\u0027 verbergt deze, \u0027Minimaal\u0027 toont een compacte balk, \u0027Live\u0027 toont de tekst in realtime tijdens het spreken (alleen voor streaming-modellen). Op Linux wordt \u0027Geen\u0027 aanbevolen.",
           "options": {
             "none": "Geen",
             "minimal": "Minimaal",
@@ -310,7 +355,7 @@
       },
       "pasteMethod": {
         "title": "Plakmethode",
-        "description": "Kies hoe tekst wordt ingevoegd. 'Direct' simuleert typen via het systeem. 'Geen' slaat het plakken over en werkt alleen de geschiedenis en het klembord bij.",
+        "description": "Kies hoe tekst wordt ingevoegd. \u0027Direct\u0027 simuleert typen via het systeem. \u0027Geen\u0027 slaat het plakken over en werkt alleen de geschiedenis en het klembord bij.",
         "options": {
           "clipboard": "Klembord ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Klembord (Ctrl+Shift+V)",
@@ -323,14 +368,14 @@
       },
       "typingTool": {
         "title": "Typgereedschap",
-        "description": "Kies welke Linux-typtool gebruikt moet worden voor de 'Directe' plakmethode. 'Automatisch' detecteert zelf de beste optie voor jouw systeem.",
+        "description": "Kies welke Linux-typtool gebruikt moet worden voor de \u0027Directe\u0027 plakmethode. \u0027Automatisch\u0027 detecteert zelf de beste optie voor jouw systeem.",
         "options": {
           "auto": "Automatisch (Aanbevolen)"
         }
       },
       "clipboardHandling": {
         "title": "Klembordbeheer",
-        "description": "'Klembord niet aanpassen' behoudt je huidige klembordinhoud na een transcriptie. 'Kopiëren naar klembord' laat de getranscribeerde tekst achter op je klembord.",
+        "description": "\u0027Klembord niet aanpassen\u0027 behoudt je huidige klembordinhoud na een transcriptie. \u0027Kopiëren naar klembord\u0027 laat de getranscribeerde tekst achter op je klembord.",
         "options": {
           "dontModify": "Klembord niet aanpassen",
           "copyToClipboard": "Kopiëren naar klembord"
@@ -398,7 +443,10 @@
         "title": "API (OpenAI-compatibel)",
         "provider": {
           "title": "Provider",
-          "description": "Selecteer een OpenAI-compatibele provider."
+          "description": "Selecteer een OpenAI-compatibele provider.",
+          "source": "Connection",
+          "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "appleConnection": "On-device Apple Intelligence"
         },
         "appleIntelligence": {
           "unavailable": "Apple Intelligence is niet beschikbaar op dit apparaat. Vereist een Apple Silicon Mac met macOS Tahoe (26.0) of nieuwer waarop Apple Intelligence is ingeschakeld via de Systeeminstellingen."
@@ -419,7 +467,20 @@
           "descriptionDefault": "Kies een model dat door de geselecteerde provider wordt aangeboden.",
           "placeholderWithOptions": "Zoek of selecteer een model",
           "placeholderNoOptions": "Typ een modelnaam",
-          "refreshModels": "Modellen verversen"
+          "refreshModels": "Modellen verversen",
+          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
+          "placeholderCodex": "subscription_default or a Codex model ID"
+        },
+        "description": "Cleanup models are not downloaded by LocalDictate. Transcript text is sent to the selected local CLI or API endpoint. Choose Local or OpenAI-compatible to use Ollama, LM Studio, OpenRouter, or another compatible service.",
+        "codex": {
+          "checking": "Checking the local Codex CLI…",
+          "ready": "Ready — signed in to Codex with ChatGPT.",
+          "notInstalled": "Codex CLI was not found. Install it, then run codex login.",
+          "notAuthenticated": "Codex CLI is not signed in. Run codex login and choose ChatGPT.",
+          "nonChatgptAuthentication": "Codex is using API-key authentication. Run codex logout, then codex login and choose ChatGPT so this uses your subscription.",
+          "error": "LocalDictate could not verify Codex. Raw dictation still works.",
+          "privacy": "Raw dictation stays on this PC. Polished dictation sends only the transcript and cleanup instructions to OpenAI through your signed-in Codex CLI. If cleanup fails, LocalDictate pastes the raw transcript.",
+          "refresh": "Check again"
         }
       },
       "prompts": {
@@ -435,13 +496,34 @@
         "promptLabelPlaceholder": "Voer promptnaam in",
         "promptInstructions": "Prompt-instructies",
         "promptInstructionsPlaceholder": "Schrijf de instructies die na de transcriptie moeten worden uitgevoerd. Voorbeeld: Verbeter de grammatica en helderheid van de volgende tekst: ${output}",
-        "promptTip": "Tip: Gebruik <code>${output}</code> om de getranscribeerde tekst in je prompt in te voegen.",
+        "promptTip": "Tip: Gebruik \u003ccode\u003e${output}\u003c/code\u003e om de getranscribeerde tekst in je prompt in te voegen.",
         "updatePrompt": "Prompt bijwerken",
         "deletePrompt": "Prompt verwijderen",
         "createPrompt": "Prompt maken",
         "cancel": "Annuleren",
         "selectToEdit": "Selecteer hierboven een prompt om de details te bekijken en te bewerken.",
-        "createFirst": "Klik hierboven op 'Nieuwe prompt maken' om je eerste naverwerkingsprompt aan te maken."
+        "createFirst": "Klik hierboven op \u0027Nieuwe prompt maken\u0027 om je eerste naverwerkingsprompt aan te maken.",
+        "description": "Create reusable cleanup instructions, then switch profiles from the footer before dictating.",
+        "profile": "Cleanup profile",
+        "libraryTitle": "Your profiles",
+        "libraryDescription": "{{count}} profiles available. The selected profile is used by the post-processing shortcut.",
+        "newTitle": "Create a cleanup profile",
+        "newDescription": "Give the profile a clear name and describe exactly how it should transform your dictation.",
+        "editTitle": "Edit selected profile",
+        "editDescription": "Changes apply the next time this profile is used.",
+        "duplicatePrompt": "Duplicate",
+        "keepOne": "At least one cleanup profile is required.",
+        "copyName": "{{name}} copy",
+        "deleteTitle": "Delete cleanup profile",
+        "deleteConfirm": "Delete the cleanup profile \u0027{{name}}\u0027?",
+        "created": "Cleanup profile created",
+        "createError": "Cleanup profile could not be created",
+        "updated": "Cleanup profile saved",
+        "updateError": "Cleanup profile could not be saved",
+        "duplicated": "Cleanup profile duplicated",
+        "duplicateError": "Cleanup profile could not be duplicated",
+        "deleted": "Cleanup profile deleted",
+        "deleteError": "Cleanup profile could not be deleted"
       }
     },
     "history": {
@@ -588,7 +670,7 @@
         "description": "Huidige versie van Handy"
       },
       "whatsNewUpdates": {
-        "label": "Toon 'Wat is er nieuw'",
+        "label": "Toon \u0027Wat is er nieuw\u0027",
         "description": "Release-notes tonen nadat Handy is bijgewerkt"
       },
       "appDataDirectory": {
@@ -610,7 +692,7 @@
         "ggml": {
           "title": "ggml",
           "description": "Krachtige tensorbibliotheek voor lokale AI-verwerking",
-          "details": "Handy's lokale spraak-naar-tekst is gebouwd op transcribe.cpp en ggml. Met dank aan het geweldige werk van Georgi Gerganov en alle bijdragers."
+          "details": "Handy\u0027s lokale spraak-naar-tekst is gebouwd op transcribe.cpp en ggml. Met dank aan het geweldige werk van Georgi Gerganov en alle bijdragers."
         }
       }
     }
@@ -640,7 +722,8 @@
     "open": "Openen",
     "copy": "Kopiëren",
     "clear": "Wissen",
-    "noOptionsFound": "Geen opties gevonden"
+    "noOptionsFound": "Geen opties gevonden",
+    "cancel": "Cancel"
   },
   "accessibility": {
     "permissionsDescription": "Handy heeft toegankelijkheidsmachtigingen nodig om getranscribeerde tekst te kunnen typen.",
@@ -651,8 +734,8 @@
     "micPermissionDeniedTitle": "Microfoontoegang geweigerd",
     "micPermissionDenied": {
       "generic": "Microfoontoegang is geweigerd door het besturingssysteem. Verleen microfoonmachtiging in je systeeminstellingen.",
-      "windows": "Schakel microfoontoegang in via Instellingen → Privacy & beveiliging → Microfoon (inclusief toegang voor desktop-apps).",
-      "macos": "Verleen microfoontoegang via Systeeminstellingen → Privacy & Beveiliging → Microfoon.",
+      "windows": "Schakel microfoontoegang in via Instellingen → Privacy \u0026 beveiliging → Microfoon (inclusief toegang voor desktop-apps).",
+      "macos": "Verleen microfoontoegang via Systeeminstellingen → Privacy \u0026 Beveiliging → Microfoon.",
       "linux": "Verleen microfoontoegang in de geluids- of privacyinstellingen van je systeem."
     },
     "noInputDeviceTitle": "Geen microfoon gevonden",
@@ -675,6 +758,120 @@
       "system": "Systeem",
       "light": "Licht",
       "dark": "Donker"
+    },
+    "accentTitle": "Accent Color",
+    "accentDescription": "Choose the color used for active controls and processing state",
+    "accents": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "teal": "Teal",
+      "rose": "Rose",
+      "amber": "Amber"
+    }
+  },
+  "appearance": {
+    "title": "Appearance",
+    "interfaceTitle": "Interface",
+    "widgetTitle": "On-screen Widget",
+    "fontSize": {
+      "title": "Text Size",
+      "description": "Adjust the text size throughout the LocalDictate settings window",
+      "options": {
+        "small": "Small",
+        "default": "Default",
+        "large": "Large"
+      }
+    },
+    "widgetAnimation": {
+      "title": "Animations",
+      "description": "Choose how much motion the on-screen recording widget uses. Reduced and Off keep clear state cues.",
+      "options": {
+        "full": "Full",
+        "reduced": "Reduced",
+        "off": "Off"
+      }
+    }
+  },
+  "themePacks": {
+    "appearanceTitle": "Appearance",
+    "title": "Theme Packs",
+    "description": "Discover and manage visual overlay packs and bundled presets.",
+    "loading": "Loading theme packs...",
+    "count_one": "{{count}} theme available",
+    "count_other": "{{count}} themes available",
+    "empty": "No theme packs are available.",
+    "applied": "Applied",
+    "codeTheme": "Code theme",
+    "byAuthor": "By {{author}}",
+    "previewAlt": "Preview of {{name}}",
+    "classicPreview": "Classic microphone and waveform overlay preview",
+    "previewUnavailable": "Preview unavailable",
+    "dimensions": "{{width}} x {{height}}",
+    "importDialogTitle": "Choose a theme pack directory",
+    "preset": {
+      "title": "Theme packs are one-time presets",
+      "description": "Applying a pack can change its overlay, app appearance, accent, and cleanup profile. Afterward, every setting remains independent and editable; the pack will not silently reapply itself."
+    },
+    "metadata": {
+      "renderer": "Renderer",
+      "canvas": "Canvas"
+    },
+    "features": {
+      "title": "Preset includes",
+      "overlay": "Overlay",
+      "appearance": "Appearance",
+      "sounds": "Sounds",
+      "cleanup": "Cleanup profile"
+    },
+    "sources": {
+      "classic": "Built in",
+      "bundled": "Bundled",
+      "installed": "Installed"
+    },
+    "renderers": {
+      "classic": "Classic controls",
+      "reactive-image": "Reactive image",
+      "sprite": "Sprite animation",
+      "particles": "Particles",
+      "web": "Web code"
+    },
+    "actions": {
+      "install": "Install from folder",
+      "installing": "Installing...",
+      "refresh": "Refresh",
+      "apply": "Apply preset",
+      "applying": "Applying...",
+      "applied": "Applied",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "cancel": "Cancel"
+    },
+    "trust": {
+      "cardWarning": "This theme contains executable visual code. Keep it only if you trust its author and source.",
+      "confirmTitle": "Trust and install code theme?",
+      "confirmDescription": "This pack contains executable theme code. Theme code is intended to run in a restricted overlay, but no code from an unknown source should be assumed safe. Install only if you trust the pack's author and where you obtained it.",
+      "installCode": "Trust and install"
+    },
+    "remove": {
+      "confirmTitle": "Remove theme pack?",
+      "confirmDescription": "Remove {{name}} from this device? If it is active, LocalDictate will return to the Classic overlay without undoing the individual settings its preset changed."
+    },
+    "success": {
+      "installed": "Theme pack installed",
+      "applied": "Theme preset applied",
+      "removed": "Theme pack removed"
+    },
+    "errors": {
+      "load": "Theme packs could not be loaded",
+      "install": "Theme pack could not be installed",
+      "apply": "Theme preset could not be applied",
+      "remove": "Theme pack could not be removed"
+    },
+    "status": {
+      "installing": "Installing theme pack",
+      "applying": "Applying theme preset",
+      "removing": "Removing theme pack",
+      "active": "Active theme pack: {{id}}"
     }
   },
   "overlay": {
@@ -691,5 +888,8 @@
     "learnMore": "Hoe je dit oplost",
     "recorderBlocked": "Sneltoetsen kunnen nu niet worden opgenomen — Secure Input van macOS blokkeert toetsgebeurtenissen. Los eerst de Secure Input-waarschuwing op.",
     "dismiss": "Sluiten"
+  },
+  "app": {
+    "name": "LocalDictate"
   }
 }

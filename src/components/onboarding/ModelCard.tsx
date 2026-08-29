@@ -1,13 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   AudioLines,
   Check,
   Download,
+  ExternalLink,
   Globe,
   HardDrive,
   Languages,
   Loader2,
+  Pencil,
+  RotateCcw,
   Trash2,
 } from "lucide-react";
 import type { ModelInfo } from "@/bindings";
@@ -22,6 +26,7 @@ import {
 } from "../../lib/constants/languages";
 import Badge from "../ui/Badge";
 import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 import { useSettingsStore } from "@/stores/settingsStore";
 
 // Get display text for model's language support
@@ -43,7 +48,26 @@ const getLanguageDisplayText = (
 // Legacy = a blob (Url-sourced) .bin/ONNX model, kept runnable but no longer the
 // advertised download (catalog GGUFs supersede it).
 export const isLegacySource = (model: ModelInfo): boolean =>
-  typeof model.source === "object" && "Url" in model.source;
+  !model.is_custom && typeof model.source === "object" && "Url" in model.source;
+
+const getModelSourceUrl = (model: ModelInfo): string | null => {
+  if (typeof model.source !== "object") return null;
+  if ("Url" in model.source) return model.source.Url.url;
+  if ("HuggingFace" in model.source) {
+    const { repo_id, revision } = model.source.HuggingFace;
+    return `https://huggingface.co/${repo_id}/blob/${revision}/${encodeURIComponent(model.filename)}`;
+  }
+  return null;
+};
+
+const isHttpUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
 
 // Extract a GGUF quantization label from a filename, if present (e.g. "Q8_0").
 const getQuantLabel = (filename: string): string | null => {
@@ -75,6 +99,9 @@ interface ModelCardProps {
   downloadProgress?: number;
   downloadSpeed?: number; // MB/s
   showRecommended?: boolean;
+  sourceOverride?: string;
+  onChangeSource?: (modelId: string, url: string) => Promise<void>;
+  onResetSource?: (modelId: string) => Promise<void>;
 }
 
 const ModelCard: React.FC<ModelCardProps> = ({
@@ -90,8 +117,16 @@ const ModelCard: React.FC<ModelCardProps> = ({
   downloadProgress,
   downloadSpeed,
   showRecommended = true,
+  sourceOverride,
+  onChangeSource,
+  onResetSource,
 }) => {
   const { t } = useTranslation();
+  const defaultSourceUrl = getModelSourceUrl(model);
+  const effectiveSourceUrl = sourceOverride || defaultSourceUrl;
+  const [isEditingSource, setIsEditingSource] = useState(false);
+  const [sourceDraft, setSourceDraft] = useState(effectiveSourceUrl ?? "");
+  const [isSavingSource, setIsSavingSource] = useState(false);
   const debugMode = useSettingsStore(
     (state) => state.settings?.debug_mode ?? false,
   );
@@ -110,24 +145,56 @@ const ModelCard: React.FC<ModelCardProps> = ({
   const capabilityLanguages = getUniqueCapabilityLanguages(
     model.supported_languages,
   );
+  useEffect(() => {
+    if (!isEditingSource) {
+      setSourceDraft(effectiveSourceUrl ?? "");
+    }
+  }, [effectiveSourceUrl, isEditingSource]);
+
+  const sourceLabel = (() => {
+    if (sourceOverride) {
+      return t("modelSelector.sourceDetails.customUrl", {
+        url: sourceOverride,
+      });
+    }
+    if (typeof model.source === "object" && "HuggingFace" in model.source) {
+      return t("modelSelector.sourceDetails.huggingFace", {
+        repository: model.source.HuggingFace.repo_id,
+        revision: model.source.HuggingFace.revision,
+      });
+    }
+    if (typeof model.source === "object" && "Url" in model.source) {
+      return t("modelSelector.sourceDetails.directUrl", {
+        url: model.source.Url.url,
+      });
+    }
+    return t("modelSelector.sourceDetails.localFile", {
+      filename: model.filename,
+    });
+  })();
+
+  const canChangeSource =
+    Boolean(onChangeSource) &&
+    model.source !== "Local" &&
+    !["downloading", "verifying", "extracting"].includes(status);
 
   const baseClasses =
-    "flex flex-col rounded-xl px-4 py-3 gap-2 text-left transition-all duration-200";
+    "flex flex-col rounded-xl bg-background-raised px-4 py-3.5 gap-2.5 text-left transition-colors duration-150";
 
   const getVariantClasses = () => {
     if (status === "active") {
-      return "border-2 border-logo-primary/50 bg-logo-primary/10";
+      return "border border-logo-primary/40 bg-logo-primary/8 ring-1 ring-logo-primary/10";
     }
     if (isFeatured) {
-      return "border-2 border-logo-primary/25 bg-logo-primary/5";
+      return "border border-logo-primary/20 bg-logo-primary/5";
     }
-    return "border-2 border-mid-gray/20";
+    return "border border-transparent";
   };
 
   const getInteractiveClasses = () => {
     if (!isClickable) return "";
     if (disabled) return "opacity-50 cursor-not-allowed";
-    return "cursor-pointer hover:border-logo-primary/50 hover:bg-logo-primary/5 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] group";
+    return "cursor-pointer hover:border-logo-primary/25 hover:bg-logo-primary/5 active:bg-logo-primary/8 group";
   };
 
   const handleClick = () => {
@@ -142,6 +209,42 @@ const ModelCard: React.FC<ModelCardProps> = ({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete?.(model.id);
+  };
+
+  const handleOpenSource = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (effectiveSourceUrl) void openUrl(effectiveSourceUrl);
+  };
+
+  const handleSaveSource = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onChangeSource || !isHttpUrl(sourceDraft.trim())) return;
+    setIsSavingSource(true);
+    try {
+      await onChangeSource(model.id, sourceDraft.trim());
+      setIsEditingSource(false);
+    } catch {
+      // The settings page reports the actionable error and keeps this editor open.
+    } finally {
+      setIsSavingSource(false);
+    }
+  };
+
+  const handleResetSource = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onResetSource) return;
+    setIsSavingSource(true);
+    try {
+      await onResetSource(model.id);
+      setIsEditingSource(false);
+    } catch {
+      // The settings page reports the actionable error and keeps this editor open.
+    } finally {
+      setIsSavingSource(false);
+    }
   };
 
   return (
@@ -226,10 +329,120 @@ const ModelCard: React.FC<ModelCardProps> = ({
         )}
       </div>
 
-      <hr className="w-full border-mid-gray/20" />
+      <div className="border-t border-mid-gray/20 pt-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          <span className="shrink-0 font-medium text-text/45">
+            {t("modelSelector.sourceDetails.label")}
+          </span>
+          {effectiveSourceUrl ? (
+            <button
+              type="button"
+              onClick={handleOpenSource}
+              title={effectiveSourceUrl}
+              className="flex min-w-0 items-center gap-1 text-left text-text/70 underline decoration-text/25 underline-offset-2 hover:text-logo-primary"
+            >
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              <span className="break-all">{sourceLabel}</span>
+            </button>
+          ) : (
+            <span className="break-all text-text/60">{sourceLabel}</span>
+          )}
+          {sourceOverride && (
+            <Badge variant="secondary">
+              {t("modelSelector.sourceDetails.overridden")}
+            </Badge>
+          )}
+          {canChangeSource && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setIsEditingSource((editing) => !editing);
+              }}
+              className="ml-auto flex shrink-0 items-center gap-1 text-text/60"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {t("modelSelector.sourceDetails.change")}
+            </Button>
+          )}
+        </div>
+
+        {isEditingSource && (
+          <div
+            className="mt-2 space-y-2"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <label
+              htmlFor={`source-${model.id}`}
+              className="block text-xs font-medium text-text/70"
+            >
+              {t("modelSelector.sourceDetails.urlLabel")}
+            </label>
+            <Input
+              id={`source-${model.id}`}
+              type="url"
+              value={sourceDraft}
+              onChange={(event) => setSourceDraft(event.target.value)}
+              placeholder={t("modelSelector.sourceDetails.urlPlaceholder")}
+              disabled={isSavingSource}
+              className="w-full font-normal"
+            />
+            <p className="text-xs leading-5 text-text/50">
+              {t("modelSelector.sourceDetails.help")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={(event) => void handleSaveSource(event)}
+                disabled={
+                  isSavingSource ||
+                  !isHttpUrl(sourceDraft.trim()) ||
+                  sourceDraft.trim() === effectiveSourceUrl
+                }
+              >
+                {isSavingSource
+                  ? t("modelSelector.sourceDetails.saving")
+                  : t("modelSelector.sourceDetails.save")}
+              </Button>
+              {sourceOverride && onResetSource && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={(event) => void handleResetSource(event)}
+                  disabled={isSavingSource}
+                  className="flex items-center gap-1"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  {t("modelSelector.sourceDetails.restore")}
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setSourceDraft(effectiveSourceUrl ?? "");
+                  setIsEditingSource(false);
+                }}
+                disabled={isSavingSource}
+              >
+                {t("common.cancel")}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Bottom row: tags + action buttons (full width) */}
-      <div className="flex items-center gap-3 w-full -mb-0.5 mt-0.5 h-5">
+      <div className="mt-1 flex min-h-6 w-full flex-wrap items-center gap-x-3 gap-y-1">
         {capabilityLanguages.length > 0 && (
           <div
             className="flex items-center gap-1 text-xs text-text/50"
@@ -274,18 +487,21 @@ const ModelCard: React.FC<ModelCardProps> = ({
             )}
           </span>
         )}
-        {onDelete && (status === "available" || status === "active") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDelete}
-            title={t("modelSelector.deleteModel", { modelName: displayName })}
-            className="flex items-center gap-1.5 text-logo-primary/85 hover:text-logo-primary hover:bg-logo-primary/10"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>{t("common.delete")}</span>
-          </Button>
-        )}
+        {onDelete &&
+          (status === "available" ||
+            status === "active" ||
+            (model.is_custom && status === "downloadable")) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              title={t("modelSelector.deleteModel", { modelName: displayName })}
+              className="flex items-center gap-1.5 text-logo-primary/85 hover:text-logo-primary hover:bg-logo-primary/10"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{t("common.delete")}</span>
+            </Button>
+          )}
       </div>
 
       {/* Download/extract progress */}

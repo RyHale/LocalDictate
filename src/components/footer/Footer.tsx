@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 
 import ModelSelector from "../model-selector";
-import UpdateChecker from "../update-checker";
+import PostProcessProfileSelector from "./PostProcessProfileSelector";
 
 const Footer: React.FC = () => {
   const [version, setVersion] = useState("");
@@ -10,31 +10,25 @@ const Footer: React.FC = () => {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const appVersion = await getVersion();
-        setVersion(appVersion);
+        setVersion(await getVersion());
       } catch (error) {
         console.error("Failed to get app version:", error);
-        setVersion("0.1.2");
+        setVersion("0.1.0");
       }
     };
 
-    fetchVersion();
+    void fetchVersion();
   }, []);
 
   return (
-    <div className="w-full border-t border-mid-gray/20 pt-3">
-      <div className="flex justify-between items-center text-xs px-4 pb-3 text-text/60">
-        <div className="flex items-center gap-4">
+    <div className="relative z-40 w-full bg-background-raised px-4 py-2.5">
+      <div className="flex min-h-8 items-center gap-5 text-xs text-text/60">
+        <div className="min-w-0 flex-1">
           <ModelSelector />
         </div>
-
-        {/* Update Status */}
-        <div className="flex items-center gap-1">
-          <UpdateChecker />
-          <span>•</span>
-          {/* eslint-disable-next-line i18next/no-literal-string */}
-          <span>v{version}</span>
-        </div>
+        <PostProcessProfileSelector />
+        {/* eslint-disable-next-line i18next/no-literal-string */}
+        <span className="shrink-0 text-text/35">v{version}</span>
       </div>
     </div>
   );

@@ -1,12 +1,12 @@
 mod actions;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
-mod audio_feedback;
 pub mod audio_toolkit;
 mod autostart;
 mod catalog;
 pub mod cli;
 mod clipboard;
+mod codex_cli;
 mod commands;
 mod helpers;
 mod input;
@@ -20,6 +20,7 @@ mod secure_input;
 mod settings;
 mod shortcut;
 mod signal_handle;
+mod theme_packs;
 mod transcription_coordinator;
 mod tray;
 mod tray_i18n;
@@ -35,13 +36,14 @@ use managers::audio::AudioRecordingManager;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
 use managers::transcription::TranscriptionManager;
+use std::io::IsTerminal;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use tauri::image::Image;
 pub use transcription_coordinator::TranscriptionCoordinator;
 
 use tauri::tray::TrayIconBuilder;
-use tauri::{AppHandle, Emitter, Listener, Manager};
+use tauri::{AppHandle, Listener, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::{Builder as LogBuilder, RotationStrategy, Target, TargetKind};
 
@@ -91,6 +93,35 @@ fn build_console_filter() -> env_filter::Filter {
     }
 
     builder.build()
+}
+
+fn should_enable_console_target(headless_mode: bool, stdout_is_terminal: bool) -> bool {
+    // Headless commands keep stderr as part of their CLI contract. A desktop
+    // app launched from Explorer has no durable console, and inherited pipes
+    // from short-lived launchers may close while the app is still running.
+    // tauri-plugin-log treats a failed console write as fatal, so GUI runs must
+    // only install that target when a real terminal will remain attached.
+    headless_mode || stdout_is_terminal
+}
+
+#[cfg(test)]
+mod console_target_tests {
+    use super::should_enable_console_target;
+
+    #[test]
+    fn desktop_launch_without_terminal_uses_file_logging_only() {
+        assert!(!should_enable_console_target(false, false));
+    }
+
+    #[test]
+    fn attached_terminal_keeps_desktop_console_logging() {
+        assert!(should_enable_console_target(false, true));
+    }
+
+    #[test]
+    fn headless_commands_keep_stderr_logging_without_a_terminal() {
+        assert!(should_enable_console_target(true, false));
+    }
 }
 
 fn show_main_window(app: &AppHandle) {
@@ -259,13 +290,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
                 // Full explanation lives in the settings-window banner
                 show_main_window(app);
             }
-            "check_updates" => {
-                let settings = settings::get_settings(app);
-                if settings.update_checks_enabled {
-                    show_main_window(app);
-                    let _ = app.emit("check-for-updates", ());
-                }
-            }
             "copy_last_transcript" => {
                 tray::copy_last_transcript(app);
             }
@@ -331,22 +355,12 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 
     // Apply the autostart preference (SMAppService login item on macOS 13+,
     // tauri-plugin-autostart elsewhere)
-    autostart::apply_autostart(app_handle, settings.autostart_enabled);
+    if let Err(error) = autostart::apply_autostart(app_handle, settings.autostart_enabled) {
+        log::warn!("Failed to apply saved launch-at-login preference: {error}");
+    }
 
     // Create the recording overlay window (hidden by default)
     utils::create_recording_overlay(app_handle);
-}
-
-#[tauri::command]
-#[specta::specta]
-fn trigger_update_check(app: AppHandle) -> Result<(), String> {
-    let settings = settings::get_settings(&app);
-    if !settings.update_checks_enabled {
-        return Ok(());
-    }
-    app.emit("check-for-updates", ())
-        .map_err(|e| e.to_string())?;
-    Ok(())
 }
 
 #[tauri::command]
@@ -618,10 +632,10 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_binding,
             shortcut::reset_binding,
             shortcut::change_ptt_setting,
-            shortcut::change_audio_feedback_setting,
-            shortcut::change_audio_feedback_volume_setting,
-            shortcut::change_sound_theme_setting,
             shortcut::change_theme_setting,
+            shortcut::change_theme_accent_setting,
+            shortcut::change_ui_font_size_setting,
+            shortcut::change_widget_animation_setting,
             shortcut::change_start_hidden_setting,
             shortcut::change_autostart_setting,
             shortcut::change_translate_to_english_setting,
@@ -672,11 +686,15 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_ort_accelerator_setting,
             shortcut::change_transcribe_gpu_device,
             shortcut::get_available_accelerators,
+            theme_packs::list_theme_packs,
+            theme_packs::install_theme_pack,
+            theme_packs::remove_theme_pack,
+            theme_packs::apply_theme_pack,
+            theme_packs::get_active_theme_pack,
             shortcut::handy_keys::start_handy_keys_recording,
             shortcut::handy_keys::stop_handy_keys_recording,
             secure_input::get_secure_input_status,
             secure_input::run_keyboard_diagnostic,
-            trigger_update_check,
             show_main_window_command,
             commands::cancel_operation,
             commands::is_portable,
@@ -689,6 +707,7 @@ pub fn run(cli_args: CliArgs) {
             commands::open_log_dir,
             commands::open_app_data_dir,
             commands::check_apple_intelligence_available,
+            codex_cli::get_codex_cli_status,
             commands::initialize_enigo,
             commands::initialize_shortcuts,
             commands::models::get_available_models,
@@ -701,6 +720,11 @@ pub fn run(cli_args: CliArgs) {
             commands::models::get_transcription_model_status,
             commands::models::is_model_loading,
             commands::models::rescan_local_models,
+            commands::models::import_transcription_model,
+            commands::models::link_transcription_model,
+            commands::models::get_model_source_overrides,
+            commands::models::set_model_source_override,
+            commands::models::clear_model_source_override,
             commands::audio::update_microphone_mode,
             commands::audio::get_microphone_mode,
             commands::audio::get_windows_microphone_permission_status,
@@ -708,11 +732,6 @@ pub fn run(cli_args: CliArgs) {
             commands::audio::get_available_microphones,
             commands::audio::set_selected_microphone,
             commands::audio::get_selected_microphone,
-            commands::audio::get_available_output_devices,
-            commands::audio::set_selected_output_device,
-            commands::audio::get_selected_output_device,
-            commands::audio::play_test_sound,
-            commands::audio::check_custom_sounds,
             commands::audio::set_clamshell_microphone,
             commands::audio::get_clamshell_microphone,
             commands::audio::is_recording,
@@ -740,7 +759,7 @@ pub fn run(cli_args: CliArgs) {
     specta_builder
         .export(
             Typescript::default().bigint(BigIntExportBehavior::Number),
-            "../src/bindings.ts",
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/bindings.ts"),
         )
         .expect("Failed to export typescript bindings");
 
@@ -761,45 +780,56 @@ pub fn run(cli_args: CliArgs) {
                 .max_file_size(500_000)
                 .rotation_strategy(RotationStrategy::KeepOne)
                 .clear_targets()
-                .targets([
-                    // Console output respects RUST_LOG environment variable. In
-                    // headless mode (--transcribe-file/--list-devices/--list-models)
-                    // stdout carries only the result (JSON or plain), so send console
-                    // logs to stderr instead to keep stdout clean for CI parsing.
-                    Target::new(if headless_mode {
-                        TargetKind::Stderr
-                    } else {
-                        TargetKind::Stdout
-                    })
-                    .filter({
-                        let console_filter = console_filter.clone();
-                        move |metadata| console_filter.enabled(metadata)
-                    }),
+                .targets({
+                    let mut targets = Vec::new();
+
+                    if should_enable_console_target(headless_mode, std::io::stdout().is_terminal())
+                    {
+                        // Console output respects RUST_LOG. Headless stdout carries
+                        // only the result, so its logs go to stderr for CI parsing.
+                        targets.push(
+                            Target::new(if headless_mode {
+                                TargetKind::Stderr
+                            } else {
+                                TargetKind::Stdout
+                            })
+                            .filter({
+                                let console_filter = console_filter.clone();
+                                move |metadata| console_filter.enabled(metadata)
+                            }),
+                        );
+                    }
+
                     // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
-                    Target::new(if let Some(data_dir) = portable::data_dir() {
-                        TargetKind::Folder {
-                            path: data_dir.join("logs"),
-                            file_name: Some("handy".into()),
-                        }
-                    } else {
-                        TargetKind::LogDir {
-                            file_name: Some("handy".into()),
-                        }
-                    })
-                    .filter(|metadata| {
-                        let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
-                        metadata.level() <= level_filter_from_u8(file_level)
-                    }),
+                    targets.push(
+                        Target::new(if let Some(data_dir) = portable::data_dir() {
+                            TargetKind::Folder {
+                                path: data_dir.join("logs"),
+                                file_name: Some("localdictate".into()),
+                            }
+                        } else {
+                            TargetKind::LogDir {
+                                file_name: Some("localdictate".into()),
+                            }
+                        })
+                        .filter(|metadata| {
+                            let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
+                            metadata.level() <= level_filter_from_u8(file_level)
+                        }),
+                    );
+
                     // Stream logs to the webview (via the `log://log` event) so the
                     // debug panel's live log viewer can show them in real time. Only
                     // active while debug mode is on (its sole consumer), and shares the
                     // file log level so the "Log Level" setting controls verbosity.
-                    Target::new(TargetKind::Webview).filter(|metadata| {
+                    targets.push(Target::new(TargetKind::Webview).filter(|metadata| {
                         WEBVIEW_LOG_STREAMING.load(Ordering::Relaxed)
                             && metadata.level()
                                 <= level_filter_from_u8(FILE_LOG_LEVEL.load(Ordering::Relaxed))
-                    }),
-                ])
+                    }));
+
+                    targets
+                })
                 .build(),
         );
 
@@ -808,7 +838,7 @@ pub fn run(cli_args: CliArgs) {
         builder = builder.plugin(tauri_nspanel::init());
     }
 
-    // Single-instance forwards CLI args to an already-running Handy and exits.
+    // Single-instance forwards CLI args to an already-running LocalDictate and exits.
     // That would make the headless path
     // (--transcribe-file/--list-devices/--list-models) a silent no-op whenever the
     // app is already open, so skip it in headless mode and run a standalone
@@ -838,7 +868,6 @@ pub fn run(cli_args: CliArgs) {
     builder
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_macos_permissions::init())
@@ -899,7 +928,7 @@ pub fn run(cli_args: CliArgs) {
             // for portable mode (redirects WebView2 cache to portable Data dir)
             let mut win_builder =
                 tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::App("/".into()))
-                    .title("Handy")
+                    .title("LocalDictate")
                     .inner_size(680.0, 570.0)
                     .min_inner_size(680.0, 570.0)
                     .resizable(true)

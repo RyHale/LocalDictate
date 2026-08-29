@@ -10,7 +10,7 @@ import {
 import { toast } from "sonner";
 import { commands } from "@/bindings";
 import { useSettingsStore } from "@/stores/settingsStore";
-import HandyTextLogo from "../icons/HandyTextLogo";
+import LocalDictateLogo from "../icons/LocalDictateLogo";
 import { Keyboard, Mic, Check, Loader2 } from "lucide-react";
 
 interface AccessibilityOnboardingProps {
@@ -31,9 +31,6 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
   const { t } = useTranslation();
   const refreshAudioDevices = useSettingsStore(
     (state) => state.refreshAudioDevices,
-  );
-  const refreshOutputDevices = useSettingsStore(
-    (state) => state.refreshOutputDevices,
   );
   const [permissionPlatform, setPermissionPlatform] =
     useState<PermissionPlatform | null>(null);
@@ -59,9 +56,9 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
       : true;
 
   const completeOnboarding = useCallback(async () => {
-    await Promise.all([refreshAudioDevices(), refreshOutputDevices()]);
+    await refreshAudioDevices();
     timeoutRef.current = setTimeout(() => onComplete(), 300);
-  }, [onComplete, refreshAudioDevices, refreshOutputDevices]);
+  }, [onComplete, refreshAudioDevices]);
 
   const hasWindowsMicrophoneAccess = useCallback(async (): Promise<boolean> => {
     const microphoneStatus =
@@ -308,7 +305,7 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
   return (
     <div className="h-screen w-screen flex flex-col p-6 gap-6 items-center justify-center">
       <div className="flex flex-col items-center gap-2">
-        <HandyTextLogo width={200} />
+        <LocalDictateLogo width={200} />
       </div>
 
       <div className="max-w-md w-full flex flex-col items-center gap-4">

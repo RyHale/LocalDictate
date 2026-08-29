@@ -1,13 +1,29 @@
-import { defineConfig } from "vite";
+import { defineConfig, type ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
 
 const host = process.env.TAURI_DEV_HOST;
+const localDictateDevOwnerToken = "localdictate-vite-owner-v1";
+
+const localDictateDevOwnerPlugin = {
+  name: "localdictate-dev-owner",
+  configureServer(server: ViteDevServer) {
+    server.middlewares.use(
+      "/__localdictate_dev_owner__",
+      (_request, response) => {
+        response.statusCode = 200;
+        response.setHeader("Content-Type", "text/plain; charset=utf-8");
+        response.setHeader("Cache-Control", "no-store");
+        response.end(localDictateDevOwnerToken);
+      },
+    );
+  },
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [localDictateDevOwnerPlugin, react(), tailwindcss()],
 
   // Path aliases
   resolve: {

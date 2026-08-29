@@ -679,7 +679,7 @@ impl AudioRecordingManager {
 
         let start_time = Instant::now();
 
-        // Don't mute immediately - caller will handle muting after audio feedback.
+        // Don't mute immediately; the caller coordinates muting with stream startup.
         // The previous stream restored audio on close, so did_mute should already
         // be false here; if it somehow isn't, restore rather than just clearing the
         // flag, which would strand system audio muted.

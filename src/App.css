@@ -13,6 +13,11 @@
   --color-mid-gray: var(--color-mid-gray);
   --color-warning: var(--color-warning);
   --color-error: var(--color-error);
+  --color-background-raised: var(--color-background-raised);
+  --color-background-sidebar: var(--color-background-sidebar);
+  --color-control: var(--color-control);
+  --color-border: var(--color-border);
+  --color-on-accent: var(--color-on-accent);
 }
 
 :root {
@@ -43,6 +48,40 @@
   /* Apply colors */
   color: var(--color-text);
   background-color: var(--color-background);
+}
+
+/* A restrained three-step interface scale. The default keeps the existing
+   15px geometry; adjacent choices move one pixel in either direction so the
+   settings window remains usable at its fixed desktop footprint. */
+:root[data-ui-font-size="small"] {
+  font-size: 14px;
+}
+
+:root[data-ui-font-size="large"] {
+  font-size: 16px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-logo-primary);
+  outline-offset: 2px;
 }
 
 .container {

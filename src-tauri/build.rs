@@ -317,6 +317,7 @@ fn generate_tray_translations() {
     let english = translations.get("en").unwrap().as_object().unwrap();
     let fields: Vec<_> = english
         .keys()
+        .filter(|key| key.as_str() != "checkUpdates")
         .map(|k| (camel_to_snake(k), k.clone()))
         .collect();
 

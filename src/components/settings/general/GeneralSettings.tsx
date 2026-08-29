@@ -5,17 +5,14 @@ import { MicrophoneSelector } from "../MicrophoneSelector";
 import { ChannelSelector } from "../ChannelSelector";
 import { ShortcutInput } from "../ShortcutInput";
 import { SettingsGroup } from "../../ui/SettingsGroup";
-import { OutputDeviceSelector } from "../OutputDeviceSelector";
 import { PushToTalk } from "../PushToTalk";
-import { AudioFeedback } from "../AudioFeedback";
 import { useSettings } from "../../../hooks/useSettings";
-import { VolumeSlider } from "../VolumeSlider";
 import { MuteWhileRecording } from "../MuteWhileRecording";
 import { ModelSettingsCard } from "./ModelSettingsCard";
 
 export const GeneralSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { audioFeedbackEnabled, getSetting } = useSettings();
+  const { getSetting } = useSettings();
   const pushToTalk = getSetting("push_to_talk");
   const isLinux = type() === "linux";
   return (
@@ -33,13 +30,6 @@ export const GeneralSettings: React.FC = () => {
         <MicrophoneSelector descriptionMode="tooltip" grouped={true} />
         <ChannelSelector descriptionMode="tooltip" grouped={true} />
         <MuteWhileRecording descriptionMode="tooltip" grouped={true} />
-        <AudioFeedback descriptionMode="tooltip" grouped={true} />
-        <OutputDeviceSelector
-          descriptionMode="tooltip"
-          grouped={true}
-          disabled={!audioFeedbackEnabled}
-        />
-        <VolumeSlider disabled={!audioFeedbackEnabled} />
       </SettingsGroup>
     </div>
   );

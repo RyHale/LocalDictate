@@ -1,1 +1,8 @@
 [build]
+
+# MSVC otherwise reads UTF-8 comments in transcribe-cpp through the machine's
+# legacy code page. On affected locales a trailing lead byte swallows the next
+# newline and turns valid Canary source into a cascade of C++ syntax errors.
+# `CL` is consumed only by cl/clang-cl; other platform compilers ignore it.
+[env]
+CL = { value = "/utf-8", force = false }

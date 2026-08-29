@@ -6,15 +6,14 @@ export { HistorySettings } from "./history/HistorySettings";
 export { AboutSettings } from "./about/AboutSettings";
 export { PostProcessingSettings } from "./post-processing/PostProcessingSettings";
 export { ModelsSettings } from "./models/ModelsSettings";
+export { AppearanceSettings } from "./appearance/AppearanceSettings";
 
 // Individual setting components
 export { MicrophoneSelector } from "./MicrophoneSelector";
 export { ChannelSelector } from "./ChannelSelector";
 export { ClamshellMicrophoneSelector } from "./ClamshellMicrophoneSelector";
-export { OutputDeviceSelector } from "./OutputDeviceSelector";
 export { AlwaysOnMicrophone } from "./AlwaysOnMicrophone";
 export { PushToTalk } from "./PushToTalk";
-export { AudioFeedback } from "./AudioFeedback";
 export { ShowOverlay } from "./ShowOverlay";
 export { GlobalShortcutInput } from "./GlobalShortcutInput";
 export { HandyKeysShortcutInput } from "./HandyKeysShortcutInput";

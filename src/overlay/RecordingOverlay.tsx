@@ -1,5 +1,12 @@
-import { listen } from "@tauri-apps/api/event";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import "./RecordingOverlay.css";
 import { commands, events } from "@/bindings";
@@ -8,31 +15,85 @@ import type {
   StreamPhaseEvent,
   StreamTextEvent,
   StreamWorkKind,
+  WidgetAnimation,
 } from "@/bindings";
 import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { getLanguageDirection } from "@/lib/utils/rtl";
+import {
+  getStoredWidgetAnimation,
+  reducesWidgetMotion,
+} from "@/lib/utils/theme";
+import {
+  createThemeSignalBuilder,
+  resolveThemeAssets,
+  ThemeScene,
+  validateThemeManifest,
+  type ThemeLifecycle,
+  type ThemeManifestV1,
+  type ThemeSignal,
+  type ThemeSignalInput,
+} from "@/themes";
 
-type OverlayState = "recording" | "streaming" | "transcribing" | "processing";
+type OverlayState =
+  | "idle"
+  | "recording"
+  | "streaming"
+  | "transcribing"
+  | "processing";
 
 // Number of reactive bars in the waveform (the simple, smoothed style shared by
 // every overlay form). Mic levels arrive as 16 FFT buckets; we take the first N.
 const WAVE_BARS = 9;
 
+interface ActiveThemePack {
+  manifest: unknown;
+  root: string;
+  source: "classic" | "bundled" | "installed";
+}
+
+const joinThemeAssetPath = (root: string, reference: string): string => {
+  const separator = root.includes("\\") ? "\\" : "/";
+  const cleanRoot = root.replace(/[\\/]+$/, "");
+  const cleanReference = reference
+    .replace(/^[\\/]+/, "")
+    .replace(/[\\/]/g, separator);
+  return `${cleanRoot}${separator}${cleanReference}`;
+};
+
+const applyClassicThemeFallback = async (): Promise<void> => {
+  try {
+    const result = await commands.applyThemePack("classic");
+    if (result.status === "error") {
+      console.warn(
+        "Failed to persist the Classic overlay fallback:",
+        result.error,
+      );
+    }
+  } catch (error) {
+    console.warn("Failed to persist the Classic overlay fallback:", error);
+  }
+};
+
 const RecordingOverlay: React.FC = () => {
   const { t } = useTranslation();
-  const [isVisible, setIsVisible] = useState(false);
-  const [state, setState] = useState<OverlayState>("recording");
+  // Enabled overlays boot into the ready indicator. The native window remains
+  // hidden when the user's overlay style is None.
+  const [isVisible, setIsVisible] = useState(true);
+  const [state, setState] = useState<OverlayState>("idle");
   // `Stream::play()` returning does not mean hardware callbacks are flowing.
   // Stay visually in an arming state until the backend processes the first
   // actual microphone sample chunk.
   const [captureReady, setCaptureReady] = useState(false);
-  const [levels, setLevels] = useState<number[]>(Array(WAVE_BARS).fill(0));
+  const [levels, setLevels] = useState<number[]>(Array(16).fill(0));
   const [streamText, setStreamText] = useState<StreamTextEvent>({
     committed: "",
     tentative: "",
   });
   const [phase, setPhase] = useState<StreamPhase>("listening");
   const [workKind, setWorkKind] = useState<StreamWorkKind>("transcribing");
+  const [widgetAnimation, setWidgetAnimation] = useState<WidgetAnimation>(
+    getStoredWidgetAnimation,
+  );
   const [elapsed, setElapsed] = useState(0);
   // Bumped on each new streaming session so the Live card remounts fresh (replays
   // the pop-in, and never animates in from the previous panel's open size).
@@ -43,6 +104,14 @@ const RecordingOverlay: React.FC = () => {
   // True once live text overflows the cap. A top overlay fades its top edge only
   // while overflowing, so the resting first line stays crisp flush under the pill.
   const [overflowing, setOverflowing] = useState(false);
+  const [themeManifest, setThemeManifest] = useState<ThemeManifestV1>();
+  const [themeRevision, setThemeRevision] = useState(0);
+  const themeSignalBuilderRef = useRef(createThemeSignalBuilder());
+  const themeStartedAtRef = useRef(performance.now());
+  const latestThemeInputRef = useRef<ThemeSignalInput>({ lifecycle: "idle" });
+  const [themeSignal, setThemeSignal] = useState<ThemeSignal>(() =>
+    themeSignalBuilderRef.current.current(),
+  );
 
   const smoothedLevelsRef = useRef<number[]>(Array(16).fill(0));
   // Live-text scroll-back: the text region "sticks" to the newest line while the
@@ -52,18 +121,76 @@ const RecordingOverlay: React.FC = () => {
   const pinnedRef = useRef(true);
   const direction = getLanguageDirection(i18n.language);
 
+  const loadActiveTheme = useCallback(async () => {
+    try {
+      const result = await commands.getActiveThemePack();
+      if (result.status === "error") {
+        throw new Error(result.error);
+      }
+      const pack = result.data as ActiveThemePack;
+      if (pack.source === "classic") {
+        setThemeManifest(undefined);
+        setThemeRevision((revision) => revision + 1);
+        return;
+      }
+      const validation = validateThemeManifest(pack.manifest);
+      if (!validation.success) {
+        console.warn(
+          "Active overlay theme is invalid; returning to Classic:",
+          validation.errors.join("; "),
+        );
+        setThemeManifest(undefined);
+        setThemeRevision((revision) => revision + 1);
+        void applyClassicThemeFallback();
+        return;
+      }
+      const resolved = resolveThemeAssets(validation.manifest, (reference) =>
+        convertFileSrc(joinThemeAssetPath(pack.root, reference)),
+      );
+      setThemeManifest(resolved);
+      setThemeRevision((revision) => revision + 1);
+    } catch (error) {
+      console.warn("Failed to load the active overlay theme:", error);
+      setThemeManifest(undefined);
+    }
+  }, []);
+
+  const handleThemeError = useCallback((error: Error) => {
+    console.warn("Overlay theme renderer failed; returning to Classic:", error);
+    void applyClassicThemeFallback();
+  }, []);
+
   useEffect(() => {
+    void loadActiveTheme();
+    const unlisten = listen("theme-pack-changed", () => {
+      void loadActiveTheme();
+    });
+    return () => {
+      void unlisten.then((dispose) => dispose());
+    };
+  }, [loadActiveTheme]);
+
+  useEffect(() => {
+    let disposed = false;
+    let disposeListeners: (() => void) | undefined;
+
     const setupEventListeners = async () => {
       const unlistenShow = await listen("show-overlay", async (event) => {
         const overlayState = event.payload as OverlayState;
         // Reset synchronously before settings I/O. A fast microphone can emit
         // recording-ready while the awaits below are in flight; resetting after
         // them would overwrite that event and leave the overlay stuck arming.
-        if (overlayState === "recording" || overlayState === "streaming") {
+        if (
+          overlayState === "idle" ||
+          overlayState === "recording" ||
+          overlayState === "streaming"
+        ) {
           setCaptureReady(false);
           smoothedLevelsRef.current = Array(16).fill(0);
-          setLevels(Array(WAVE_BARS).fill(0));
+          setLevels(Array(16).fill(0));
           setStreamText({ committed: "", tentative: "" });
+          themeStartedAtRef.current = performance.now();
+          setThemeSignal(themeSignalBuilderRef.current.reset());
         }
 
         await syncLanguageFromSettings();
@@ -75,6 +202,7 @@ const RecordingOverlay: React.FC = () => {
             setPosition(
               settings.data.overlay_position === "top" ? "top" : "bottom",
             );
+            setWidgetAnimation(settings.data.widget_animation ?? "full");
           }
         } catch {
           // Keep the previous/default placement if settings can't be read.
@@ -108,8 +236,13 @@ const RecordingOverlay: React.FC = () => {
           return prev * 0.7 + target * 0.3;
         });
         smoothedLevelsRef.current = smoothed;
-        setLevels(smoothed.slice(0, WAVE_BARS));
+        setLevels(smoothed);
       });
+
+      const unlistenWidgetAnimation = await listen<WidgetAnimation>(
+        "widget-animation-changed",
+        (event) => setWidgetAnimation(event.payload),
+      );
 
       const unlistenStream = await events.streamTextEvent.listen((event) => {
         setStreamText(event.payload);
@@ -121,17 +254,31 @@ const RecordingOverlay: React.FC = () => {
         if (payload.kind) setWorkKind(payload.kind);
       });
 
-      return () => {
+      const dispose = () => {
         unlistenShow();
         unlistenHide();
         unlistenReady();
         unlistenLevel();
+        unlistenWidgetAnimation();
         unlistenStream();
         unlistenPhase();
       };
+
+      if (disposed) {
+        dispose();
+        return;
+      }
+
+      disposeListeners = dispose;
+      await emit("overlay-ready");
     };
 
-    setupEventListeners();
+    void setupEventListeners();
+
+    return () => {
+      disposed = true;
+      disposeListeners?.();
+    };
   }, []);
 
   // Elapsed capture timer starts only once microphone samples are flowing.
@@ -157,6 +304,45 @@ const RecordingOverlay: React.FC = () => {
     setOverflowing(false);
   }, [session]);
 
+  const themeLifecycle: ThemeLifecycle = (() => {
+    if (state === "idle") return "idle";
+    if (state === "processing") return "processing";
+    if (state === "transcribing") return "transcribing";
+    if (state === "streaming" && phase === "working") {
+      return workKind === "polishing" ? "processing" : "transcribing";
+    }
+    return captureReady ? "listening" : "arming";
+  })();
+
+  latestThemeInputRef.current = {
+    lifecycle: themeLifecycle,
+    spectrum: levels,
+    committedText: streamText.committed,
+    tentativeText: streamText.tentative,
+    reducedMotion: reducesWidgetMotion(widgetAnimation) ? true : undefined,
+  };
+
+  const updateThemeSignal = useCallback(() => {
+    setThemeSignal(
+      themeSignalBuilderRef.current.update({
+        ...latestThemeInputRef.current,
+        elapsedSeconds: (performance.now() - themeStartedAtRef.current) / 1000,
+      }),
+    );
+  }, []);
+
+  useEffect(() => {
+    updateThemeSignal();
+  }, [levels, streamText, themeLifecycle, updateThemeSignal, widgetAnimation]);
+
+  // Audio events drive reactive themes near 30 FPS while listening. A light
+  // heartbeat keeps idle and working sprite clips moving after audio stops.
+  useEffect(() => {
+    if (!isVisible || !themeManifest || widgetAnimation !== "full") return;
+    const id = window.setInterval(updateThemeSignal, 100);
+    return () => window.clearInterval(id);
+  }, [isVisible, themeManifest, updateThemeSignal, widgetAnimation]);
+
   if (!isVisible) return null;
 
   // Re-pin when the user is within ~a line of the bottom; unpin otherwise.
@@ -172,7 +358,7 @@ const RecordingOverlay: React.FC = () => {
   // ---- Shared building blocks (one visual language for every overlay form) ----
   const waveform = (
     <div className={`swave ${captureReady ? "ready" : "arming"}`}>
-      {levels.map((v, i) => (
+      {levels.slice(0, WAVE_BARS).map((v, i) => (
         <i
           key={i}
           style={{
@@ -227,6 +413,37 @@ const RecordingOverlay: React.FC = () => {
     </div>
   );
 
+  const renderWithTheme = (classicOverlay: React.ReactNode) => {
+    if (!themeManifest) return classicOverlay;
+    return (
+      <div className="ov-theme-stage">
+        <ThemeScene
+          key={themeRevision}
+          classicFallback={classicOverlay}
+          manifest={themeManifest}
+          onThemeError={handleThemeError}
+          signal={themeSignal}
+        />
+      </div>
+    );
+  };
+
+  // Always-on ready state: deliberately tiny, but visible enough to confirm
+  // LocalDictate is running. It expands into the listening pill on key-down.
+  if (state === "idle") {
+    return renderWithTheme(
+      <div dir={direction} className={`ov-stage ${position}`}>
+        <div className="scard idle" aria-hidden="true">
+          <svg className="sidle-mic" viewBox="0 0 20 20">
+            <rect x="7" y="3" width="6" height="9" rx="3" />
+            <path d="M5 9.5a5 5 0 0 0 10 0M10 14.5V17M7.5 17h5" />
+          </svg>
+          <span className="sidle-ready" />
+        </div>
+      </div>,
+    );
+  }
+
   // ---- Live overlay: a pill that sculpts open into a panel ----
   if (state === "streaming") {
     const hasText =
@@ -239,7 +456,7 @@ const RecordingOverlay: React.FC = () => {
     const open = hasText;
     const collapsed = working && !hasText;
 
-    return (
+    return renderWithTheme(
       <div dir={direction} className={`ov-stage ${position}`}>
         <div
           key={session}
@@ -275,7 +492,7 @@ const RecordingOverlay: React.FC = () => {
               )
             : listeningRow(open, true)}
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -288,7 +505,7 @@ const RecordingOverlay: React.FC = () => {
       ? t("overlay.processing")
       : t("overlay.transcribing");
 
-  return (
+  return renderWithTheme(
     <div
       dir={direction}
       className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
@@ -298,7 +515,7 @@ const RecordingOverlay: React.FC = () => {
       >
         {working ? workingRow(workLabel, true) : listeningRow(false, true)}
       </div>
-    </div>
+    </div>,
   );
 };
 
