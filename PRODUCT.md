@@ -17,8 +17,8 @@ LocalDictate provides push-to-talk dictation with a small bottom-of-screen statu
 Quiet, fast, native. The app should feel like a trustworthy Windows utility that stays out of the way until invoked.
 
 Theme packs are an explicit opt-in exception to the quiet default. A user may
-choose an expressive overlay, sound set, and post-processing preset without
-changing the dependable behavior of transcription or the settings UI.
+choose an expressive overlay and post-processing preset without changing the
+dependable behavior of transcription or the settings UI.
 
 ## Anti-references
 

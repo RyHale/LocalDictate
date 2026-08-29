@@ -2,7 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-import { ThemeManifestV1Schema, type ThemeManifestV1 } from "../src/themes";
+import {
+  ThemeManifestV1Schema,
+  resolveThemeAssets,
+  validateResolvedThemeManifest,
+  type ThemeManifestV1,
+} from "../src/themes";
 
 const themesRoot = path.resolve(
   import.meta.dir,
@@ -66,6 +71,12 @@ describe("bundled theme packs", async () => {
         expect(reference.includes(".."), reference).toBe(false);
         await access(path.join(packRoot, reference));
       }
+
+      const resolved = resolveThemeAssets(
+        manifest,
+        (reference) => `asset://localhost/${directory}/${reference}`,
+      );
+      expect(validateResolvedThemeManifest(resolved).success).toBe(true);
 
       if (manifest.overlay.renderer === "web") {
         const source = await readFile(

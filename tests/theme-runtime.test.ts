@@ -6,6 +6,7 @@ import {
   createThemeSignalBuilder,
   isSafeResolvedThemeAssetUrl,
   resolveThemeAssets,
+  validateResolvedThemeManifest,
   validateThemeManifest,
 } from "../src/themes";
 import { interpolateCanvasSignal } from "../src/themes/renderers/canvas";
@@ -149,6 +150,26 @@ describe("theme manifest v1", () => {
     expect(resolved.overlay.config.layers[0].asset).toBe(
       "asset://localhost/assets/image.png",
     );
+  });
+
+  test("accepts host-resolved app asset URLs at the renderer boundary", () => {
+    const manifest = ThemeManifestV1Schema.parse(reactiveManifest);
+    const resolved = resolveThemeAssets(
+      manifest,
+      (reference) => `asset://localhost/${reference}`,
+    );
+
+    expect(validateResolvedThemeManifest(resolved).success).toBe(true);
+  });
+
+  test("rejects remote asset URLs at the renderer boundary", () => {
+    const manifest = ThemeManifestV1Schema.parse(reactiveManifest);
+    const resolved = resolveThemeAssets(
+      manifest,
+      (reference) => `https://example.com/${reference}`,
+    );
+
+    expect(validateResolvedThemeManifest(resolved).success).toBe(false);
   });
 });
 

@@ -58,4 +58,22 @@ describe("feedback sounds are retired", () => {
     );
     expect(waveFiles).toEqual([]);
   });
+
+  test("Windows upgrades remove feedback cues from older installs", async () => {
+    const installerHooks = await readFile(
+      path.join(repositoryRoot, "src-tauri/windows/hooks.nsh"),
+      "utf8",
+    );
+
+    for (const retiredCue of [
+      "marimba_start.wav",
+      "marimba_stop.wav",
+      "pop_start.wav",
+      "pop_stop.wav",
+      "sounds\\start.wav",
+      "sounds\\stop.wav",
+    ]) {
+      expect(installerHooks).toContain(retiredCue);
+    }
+  });
 });

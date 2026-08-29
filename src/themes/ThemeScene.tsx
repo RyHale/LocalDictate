@@ -10,7 +10,7 @@ import {
 } from "react";
 
 import {
-  ThemeManifestV1Schema,
+  ResolvedThemeManifestV1Schema,
   ThemeSignalSchema,
   type ThemeManifestV1,
   type ThemeSignal,
@@ -81,7 +81,7 @@ export function ThemeScene({
 }: ThemeSceneProps) {
   const [runtimeError, setRuntimeError] = useState<Error>();
   const manifestResult = useMemo(
-    () => ThemeManifestV1Schema.safeParse(manifestInput),
+    () => ResolvedThemeManifestV1Schema.safeParse(manifestInput),
     [manifestInput],
   );
   const signalResult = useMemo(

@@ -3,6 +3,8 @@ export { ThemeScene, type ThemeSceneProps } from "./ThemeScene";
 export {
   ThemeLifecycleSchema,
   ThemeManifestV1Schema,
+  ResolvedThemeManifestV1Schema,
+  ResolvedThemeOverlaySchema,
   ThemeOverlaySchema,
   ThemeSignalSchema,
   NumericBindingSchema,
@@ -10,6 +12,7 @@ export {
   ReactiveImageConfigSchema,
   SpriteConfigSchema,
   WebConfigSchema,
+  validateResolvedThemeManifest,
   validateThemeManifest,
   type NumericBinding,
   type ParticleConfig,

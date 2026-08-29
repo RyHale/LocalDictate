@@ -221,6 +221,26 @@ switch ($Action) {
         # Daily use must come from a release installer. A debug no-bundle build
         # shares target\debug with `tauri dev` and can be silently overwritten
         # by a localhost-only executable.
+        # Tauri stages resources under target\release without pruning files
+        # removed from the source tree. Recreate that exact staging directory so
+        # retired assets cannot leak into a later installer.
+        $localDictateWorkspaceRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+        $localDictateReleaseRoot = [System.IO.Path]::GetFullPath((
+            Join-Path $localDictateWorkspaceRoot "src-tauri\target\release"
+        ))
+        $localDictateStagedResources = [System.IO.Path]::GetFullPath((
+            Join-Path $localDictateReleaseRoot "resources"
+        ))
+        $localDictateExpectedPrefix = $localDictateReleaseRoot.TrimEnd('\') + '\'
+        if (-not $localDictateStagedResources.StartsWith(
+            $localDictateExpectedPrefix,
+            [System.StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "Refusing to clean a release resource path outside target\release: $localDictateStagedResources"
+        }
+        if (Test-Path -LiteralPath $localDictateStagedResources) {
+            Remove-Item -LiteralPath $localDictateStagedResources -Recurse -Force
+        }
         & bun tauri build --bundles nsis
     }
     "check" {
