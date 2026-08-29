@@ -1,0 +1,32 @@
+html,
+body,
+#root {
+  background: transparent;
+}
+
+.theme-drag-handle {
+  box-sizing: border-box;
+  width: 44px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(22, 27, 34, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  cursor: grab;
+  user-select: none;
+}
+
+.theme-drag-handle:active {
+  cursor: grabbing;
+}
+
+.theme-drag-handle svg {
+  width: 28px;
+  height: 8px;
+  fill: currentColor;
+  pointer-events: none;
+}

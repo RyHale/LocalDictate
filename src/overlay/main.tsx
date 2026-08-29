@@ -1,7 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import RecordingOverlay from "./RecordingOverlay";
+import ThemeDragHandle from "./ThemeDragHandle";
 import {
   applyTheme,
   applyThemeAccent,
@@ -43,6 +45,10 @@ listen<WidgetAnimation>("widget-animation-changed", (event) =>
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <RecordingOverlay />
+    {getCurrentWindow().label === "recording_overlay_drag_handle" ? (
+      <ThemeDragHandle />
+    ) : (
+      <RecordingOverlay />
+    )}
   </React.StrictMode>,
 );

@@ -56,7 +56,13 @@ pub trait ShortcutAction: Send + Sync {
 
 // Transcribe Action
 struct TranscribeAction {
+    /// Dedicated cleanup actions always request post-processing. Ordinary
+    /// dictation follows the persisted post-processing toggle instead.
     post_process: bool,
+}
+
+fn should_post_process_transcription(dedicated_action: bool, post_process_enabled: bool) -> bool {
+    dedicated_action || post_process_enabled
 }
 
 /// Field name for structured output JSON schema
@@ -419,6 +425,16 @@ pub(crate) struct ProcessedTranscription {
     pub post_process_prompt: Option<String>,
 }
 
+fn resolve_post_process_output(
+    raw_text: &str,
+    processed_text: Option<String>,
+) -> (String, Option<String>) {
+    match processed_text {
+        Some(processed_text) => (processed_text.clone(), Some(processed_text)),
+        None => (raw_text.to_string(), None),
+    }
+}
+
 /// Resolve the persisted language *intent* into the language the currently-loaded
 /// model will actually use — the same capability-aware coercion the transcription
 /// paths apply (see [`crate::managers::model::effective_language`]). Post-processing
@@ -461,18 +477,17 @@ pub(crate) async fn process_transcription_output(
     }
 
     if post_process {
-        if let Some(processed_text) = post_process_transcription(&settings, &final_text).await {
-            post_processed_text = Some(processed_text.clone());
-            final_text = processed_text;
+        let processed_text = post_process_transcription(&settings, &final_text).await;
+        (final_text, post_processed_text) =
+            resolve_post_process_output(&final_text, processed_text);
 
+        if post_processed_text.is_some() {
             if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
-                if let Some(prompt) = settings
+                post_process_prompt = settings
                     .post_process_prompts
                     .iter()
                     .find(|prompt| &prompt.id == prompt_id)
-                {
-                    post_process_prompt = Some(prompt.prompt.clone());
-                }
+                    .map(|prompt| prompt.prompt.clone());
             }
         }
     } else if final_text != transcription {
@@ -668,7 +683,8 @@ impl ShortcutAction for TranscribeAction {
         // the larger panel, but it still switches from listening to a working
         // spinner while the stream finalizes. Non-streaming paths use the
         // compact transcribing pill (None no-ops in show_*).
-        let style = get_settings(app).overlay_style;
+        let settings = get_settings(app);
+        let style = settings.overlay_style;
         // Capture this before finalizing the stream so every later working state
         // targets the same overlay that was shown for this transcription.
         let use_streaming_overlay = should_use_streaming_overlay(style, tm.is_streaming());
@@ -681,7 +697,8 @@ impl ShortcutAction for TranscribeAction {
         rm.remove_mute();
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
-        let post_process = self.post_process;
+        let post_process =
+            should_post_process_transcription(self.post_process, settings.post_process_enabled);
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -965,8 +982,8 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
 #[cfg(test)]
 mod tests {
     use super::{
-        complete_unless_cancelled, is_blank_transcription, should_use_streaming_overlay,
-        strip_think_block,
+        complete_unless_cancelled, is_blank_transcription, resolve_post_process_output,
+        should_post_process_transcription, should_use_streaming_overlay, strip_think_block,
     };
     use crate::settings::OverlayStyle;
     use std::future;
@@ -1048,5 +1065,40 @@ mod tests {
         assert!(!should_use_streaming_overlay(OverlayStyle::Live, false));
         assert!(!should_use_streaming_overlay(OverlayStyle::Minimal, true));
         assert!(!should_use_streaming_overlay(OverlayStyle::None, true));
+    }
+
+    #[test]
+    fn ordinary_dictation_uses_enabled_cleanup_profile() {
+        assert!(should_post_process_transcription(false, true));
+        assert!(!should_post_process_transcription(false, false));
+    }
+
+    #[test]
+    fn dedicated_cleanup_action_remains_explicit() {
+        assert!(should_post_process_transcription(true, false));
+        assert!(should_post_process_transcription(true, true));
+    }
+
+    #[test]
+    fn failed_cleanup_falls_back_to_raw_transcription() {
+        let (final_text, post_processed_text) =
+            resolve_post_process_output("Keep this raw text.", None);
+
+        assert_eq!(final_text, "Keep this raw text.");
+        assert_eq!(post_processed_text, None);
+    }
+
+    #[test]
+    fn successful_cleanup_replaces_and_records_transcription() {
+        let (final_text, post_processed_text) = resolve_post_process_output(
+            "Standard speech.",
+            Some("Arrr, standard speech.".to_string()),
+        );
+
+        assert_eq!(final_text, "Arrr, standard speech.");
+        assert_eq!(
+            post_processed_text.as_deref(),
+            Some("Arrr, standard speech.")
+        );
     }
 }

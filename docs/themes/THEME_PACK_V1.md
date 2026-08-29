@@ -167,6 +167,16 @@ top/bottom position. Art-only themes should use pointer passthrough so
 transparent bounds do not block desktop interaction. The classic compact
 controls remain the accessible fallback. Themes cannot request keyboard focus.
 
+On Windows, LocalDictate adds a compact host-owned drag grip to an active
+theme. Dragging the grip temporarily overrides the manifest anchor for the rest
+of the app session, including recording and processing state changes. Changing
+the active pack or explicitly choosing the Top/Bottom widget position returns
+the theme to its configured anchor. The full theme canvas keeps its manifest
+pointer behavior; the grip is a separate native surface so a passthrough canvas
+does not become a transparent desktop dead zone. macOS panels and Linux
+layer-shell overlays remain system/compositor-anchored in v1 and do not expose
+the free-position grip.
+
 ## Compatibility and failure behavior
 
 - Unknown schema versions or renderer names are rejected with a readable error.

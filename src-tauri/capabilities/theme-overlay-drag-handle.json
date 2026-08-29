@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "theme-overlay-drag-handle",
+  "description": "Allows the compact themed-widget drag handle to emit movement events and start native dragging.",
+  "windows": ["recording_overlay_drag_handle"],
+  "permissions": ["core:event:default", "core:window:allow-start-dragging"]
+}

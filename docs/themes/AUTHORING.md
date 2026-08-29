@@ -117,6 +117,14 @@ Left/right and top/bottom anchors keep the window near that edge; `center`
 values center it on that axis. This is separate from image-layer and sprite
 registration inside the window.
 
+On Windows, the host renders a separate compact drag grip for active themes. A
+user drag overrides `overlay.anchor` for the current app session and survives
+overlay lifecycle changes. Applying another pack or changing the Top/Bottom
+widget setting resets the custom origin. The theme canvas itself continues to
+follow `pointerMode`; passthrough art does not become interactive. macOS panels
+and Linux layer-shell surfaces remain system/compositor-anchored in v1, so the
+free-position grip is not shown there.
+
 ### General image rules
 
 - Use PNG artwork with real alpha when the native window should look

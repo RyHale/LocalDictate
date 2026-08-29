@@ -2,15 +2,16 @@ use crate::input;
 use crate::settings;
 use crate::settings::{OverlayPosition, OverlayStyle};
 use crate::theme_packs::{OverlayWindowConfig, ThemeOverlayAnchor, ThemePointerMode};
+use serde::Deserialize;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Emitter, Listener, Manager, PhysicalPosition, PhysicalSize};
+use tauri::{
+    AppHandle, Emitter, Listener, Manager, PhysicalPosition, PhysicalSize, WebviewWindowBuilder,
+};
 
 #[cfg(not(target_os = "macos"))]
 use log::debug;
-
-#[cfg(not(target_os = "macos"))]
-use tauri::WebviewWindowBuilder;
 
 #[cfg(target_os = "macos")]
 use tauri::WebviewUrl;
@@ -52,6 +53,38 @@ const OVERLAY_HEIGHT: f64 = 46.0;
 const OVERLAY_IDLE_WIDTH: f64 = 72.0;
 const OVERLAY_IDLE_HEIGHT: f64 = 36.0;
 
+// A themed canvas remains click-through exactly as its manifest requests. A
+// separate, deliberately tiny native window is the only interactive drag
+// surface, avoiding a transparent 300x230 (or larger) desktop dead zone.
+const THEME_DRAG_HANDLE_WIDTH: f64 = 44.0;
+const THEME_DRAG_HANDLE_HEIGHT: f64 = 18.0;
+const THEME_DRAG_HANDLE_TOP_INSET: f64 = 6.0;
+
+#[derive(Debug, Clone, Copy)]
+struct RetainedThemeOverlayOrigin {
+    position: PhysicalPosition<i32>,
+    scale: f64,
+}
+
+static RETAINED_THEME_OVERLAY_ORIGIN: Mutex<Option<RetainedThemeOverlayOrigin>> = Mutex::new(None);
+
+#[derive(Debug, Deserialize)]
+struct ThemeDragHandleMoved {
+    x: i32,
+    y: i32,
+}
+
+#[cfg(target_os = "windows")]
+fn primary_pointer_is_down() -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
+
+    unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) < 0 }
+}
+
+fn should_accept_theme_drag_move(primary_pointer_down: bool) -> bool {
+    primary_pointer_down
+}
+
 // Actual is 394x118, just a little extra
 const OVERLAY_STREAM_WIDTH: f64 = 400.0;
 const OVERLAY_STREAM_HEIGHT: f64 = 120.0;
@@ -83,6 +116,65 @@ fn should_ignore_cursor(theme: Option<OverlayWindowConfig>, state: &str) -> bool
     theme
         .map(|theme| theme.pointer_mode == ThemePointerMode::Passthrough)
         .unwrap_or(state == "idle")
+}
+
+fn retained_theme_overlay_origin() -> Option<RetainedThemeOverlayOrigin> {
+    *RETAINED_THEME_OVERLAY_ORIGIN
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+fn remember_theme_overlay_origin(position: PhysicalPosition<i32>, scale: f64) {
+    *RETAINED_THEME_OVERLAY_ORIGIN
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+        Some(RetainedThemeOverlayOrigin { position, scale });
+}
+
+fn clear_retained_theme_overlay_origin() {
+    *RETAINED_THEME_OVERLAY_ORIGIN
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
+}
+
+fn resolved_overlay_origin(
+    has_theme: bool,
+    retained: Option<PhysicalPosition<i32>>,
+    anchored: PhysicalPosition<i32>,
+) -> PhysicalPosition<i32> {
+    if has_theme {
+        retained.unwrap_or(anchored)
+    } else {
+        anchored
+    }
+}
+
+fn theme_drag_handle_bounds(
+    theme_origin: PhysicalPosition<i32>,
+    scale: f64,
+    theme_width: f64,
+    _theme_height: f64,
+) -> (PhysicalPosition<i32>, PhysicalSize<u32>) {
+    let width = (THEME_DRAG_HANDLE_WIDTH * scale).round().max(1.0) as u32;
+    let height = (THEME_DRAG_HANDLE_HEIGHT * scale).round().max(1.0) as u32;
+    let x =
+        theme_origin.x + (((theme_width - THEME_DRAG_HANDLE_WIDTH) * scale) / 2.0).round() as i32;
+    let y = theme_origin.y + (THEME_DRAG_HANDLE_TOP_INSET * scale).round() as i32;
+    (
+        PhysicalPosition::new(x, y),
+        PhysicalSize::new(width, height),
+    )
+}
+
+fn theme_origin_from_drag_handle(
+    handle_origin: PhysicalPosition<i32>,
+    scale: f64,
+    theme_width: f64,
+) -> PhysicalPosition<i32> {
+    PhysicalPosition::new(
+        handle_origin.x - (((theme_width - THEME_DRAG_HANDLE_WIDTH) * scale) / 2.0).round() as i32,
+        handle_origin.y - (THEME_DRAG_HANDLE_TOP_INSET * scale).round() as i32,
+    )
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -406,6 +498,120 @@ fn force_overlay_topmost(overlay_window: &tauri::webview::WebviewWindow) {
     });
 }
 
+fn create_theme_drag_handle(app_handle: &AppHandle) {
+    if app_handle
+        .get_webview_window("recording_overlay_drag_handle")
+        .is_some()
+    {
+        return;
+    }
+
+    let mut builder = WebviewWindowBuilder::new(
+        app_handle,
+        "recording_overlay_drag_handle",
+        tauri::WebviewUrl::App("src/overlay/index.html".into()),
+    )
+    .title("LocalDictate")
+    .resizable(false)
+    .inner_size(THEME_DRAG_HANDLE_WIDTH, THEME_DRAG_HANDLE_HEIGHT)
+    .shadow(false)
+    .maximizable(false)
+    .minimizable(false)
+    .closable(false)
+    .accept_first_mouse(true)
+    .decorations(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .transparent(true)
+    .focusable(false)
+    .focused(false)
+    .visible(false);
+
+    if let Some(data_dir) = crate::portable::data_dir() {
+        builder = builder.data_directory(data_dir.join("webview-drag-handle"));
+    }
+
+    if let Err(error) = builder.build() {
+        log::error!("Failed to create themed overlay drag handle: {error}");
+    }
+}
+
+fn hide_theme_drag_handle(app_handle: &AppHandle) {
+    if let Some(handle_window) = app_handle.get_webview_window("recording_overlay_drag_handle") {
+        let _ = handle_window.hide();
+    }
+}
+
+fn place_theme_drag_handle(
+    app_handle: &AppHandle,
+    theme_origin: PhysicalPosition<i32>,
+    scale: f64,
+    theme: OverlayWindowConfig,
+) {
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (app_handle, theme_origin, scale, theme);
+        return;
+    }
+
+    #[cfg(target_os = "windows")]
+    create_theme_drag_handle(app_handle);
+    let Some(handle_window) = app_handle.get_webview_window("recording_overlay_drag_handle") else {
+        return;
+    };
+    let (position, size) =
+        theme_drag_handle_bounds(theme_origin, scale, theme.width as f64, theme.height as f64);
+    let _ = handle_window.set_size(tauri::Size::Physical(size));
+    let _ = handle_window.set_position(tauri::Position::Physical(position));
+    let _ = handle_window.show();
+
+    #[cfg(target_os = "windows")]
+    force_overlay_topmost(&handle_window);
+}
+
+fn move_theme_overlay_from_drag_handle(
+    app_handle: &AppHandle,
+    handle_origin: PhysicalPosition<i32>,
+) {
+    let Some(theme) = crate::theme_packs::active_overlay_window_config(app_handle) else {
+        hide_theme_drag_handle(app_handle);
+        return;
+    };
+    let Some(handle_window) = app_handle.get_webview_window("recording_overlay_drag_handle") else {
+        return;
+    };
+    let scale = handle_window.scale_factor().unwrap_or(1.0);
+    let theme_origin = theme_origin_from_drag_handle(handle_origin, scale, theme.width as f64);
+    remember_theme_overlay_origin(theme_origin, scale);
+
+    let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") else {
+        return;
+    };
+
+    #[cfg(target_os = "windows")]
+    {
+        use windows::Win32::UI::WindowsAndMessaging::{
+            SetWindowPos, SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER,
+        };
+        if let Ok(hwnd) = overlay_window.hwnd() {
+            unsafe {
+                let _ = SetWindowPos(
+                    hwnd,
+                    None,
+                    theme_origin.x,
+                    theme_origin.y,
+                    0,
+                    0,
+                    SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER,
+                );
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    let _ = overlay_window.set_position(tauri::Position::Physical(theme_origin));
+}
+
 fn get_monitor_with_cursor(app_handle: &AppHandle) -> Option<tauri::Monitor> {
     if let Some(mouse_location) = input::get_cursor_position(app_handle) {
         if let Ok(monitors) = app_handle.available_monitors() {
@@ -624,7 +830,12 @@ fn place_windows_overlay(
 
     let monitor = get_monitor_with_cursor(app_handle)
         .ok_or_else(|| "failed to determine the monitor containing the cursor".to_string())?;
-    let (x, y, width, height) = windows_overlay_bounds(
+    let theme = crate::theme_packs::active_overlay_window_config(app_handle);
+    let retained = theme.and_then(|_| retained_theme_overlay_origin());
+    let placement_scale = retained
+        .map(|origin| origin.scale)
+        .unwrap_or_else(|| monitor.scale_factor());
+    let (anchored_x, anchored_y, _, _) = windows_overlay_bounds(
         *monitor.position(),
         *monitor.size(),
         monitor.scale_factor(),
@@ -632,6 +843,14 @@ fn place_windows_overlay(
         logical_height,
         overlay_anchor(app_handle),
     );
+    let origin = resolved_overlay_origin(
+        theme.is_some(),
+        retained.map(|origin| origin.position),
+        PhysicalPosition::new(anchored_x, anchored_y),
+    );
+    let width = (logical_width * placement_scale).round().max(1.0) as i32;
+    let height = (logical_height * placement_scale).round().max(1.0) as i32;
+    let (x, y) = (origin.x, origin.y);
     let hwnd = overlay_window
         .hwnd()
         .map_err(|error| format!("failed to get overlay window handle: {error}"))?;
@@ -657,6 +876,12 @@ fn place_windows_overlay(
         height,
         monitor.scale_factor()
     );
+
+    if let Some(theme) = theme {
+        place_theme_drag_handle(app_handle, origin, placement_scale, theme);
+    } else {
+        hide_theme_drag_handle(app_handle);
+    }
     Ok(())
 }
 
@@ -793,6 +1018,28 @@ fn prepare_overlay_readiness(app_handle: &AppHandle) {
         apply_requested_overlay_state(&handle);
         emit_cached_recording_ready(&handle);
     });
+
+    #[cfg(target_os = "windows")]
+    {
+        let drag_handle = app_handle.clone();
+        app_handle.listen("theme-overlay-dragged", move |event| {
+            if !should_accept_theme_drag_move(primary_pointer_is_down()) {
+                return;
+            }
+            let Ok(moved) = serde_json::from_str::<ThemeDragHandleMoved>(event.payload()) else {
+                log::error!("Ignoring malformed themed overlay drag payload");
+                return;
+            };
+            let app = drag_handle.clone();
+            let _ = drag_handle.run_on_main_thread(move || {
+                move_theme_overlay_from_drag_handle(&app, PhysicalPosition::new(moved.x, moved.y))
+            });
+        });
+
+        app_handle.listen("theme-pack-changed", move |_| {
+            clear_retained_theme_overlay_origin();
+        });
+    }
 }
 
 fn requested_overlay_state() -> RequestedOverlayState {
@@ -948,6 +1195,21 @@ fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str, notify_fronte
                 } else {
                     std::time::Duration::ZERO
                 };
+            #[cfg(not(target_os = "windows"))]
+            if let Some(theme) = theme_window {
+                if let Some(retained) = retained_theme_overlay_origin() {
+                    let _ =
+                        overlay_window.set_position(tauri::Position::Physical(retained.position));
+                    place_theme_drag_handle(app_handle, retained.position, retained.scale, theme);
+                } else if let (Ok(origin), Ok(scale)) = (
+                    overlay_window.outer_position(),
+                    overlay_window.scale_factor(),
+                ) {
+                    place_theme_drag_handle(app_handle, origin, scale, theme);
+                }
+            } else {
+                hide_theme_drag_handle(app_handle);
+            }
             #[cfg(target_os = "windows")]
             let set_pos_elapsed = {
                 let set_pos_started = std::time::Instant::now();
@@ -1051,6 +1313,9 @@ pub fn show_processing_overlay(app_handle: &AppHandle) {
 
 /// Updates the overlay window position based on current settings
 pub fn update_overlay_position(app_handle: &AppHandle) {
+    // An explicit Top/Bottom settings change intentionally returns a dragged
+    // theme to its configured anchor.
+    clear_retained_theme_overlay_origin();
     // Positioning queries monitors/cursor (GDK/Xlib on Linux) and moves the
     // window, so it must run on the main thread — see show_overlay_state.
     let handle = app_handle.clone();
@@ -1145,6 +1410,7 @@ pub fn sync_overlay_visibility(app_handle: &AppHandle) {
 
 fn hide_native_overlay_preserving_frontend(app_handle: &AppHandle) {
     OVERLAY_SHOW_GENERATION.fetch_add(1, Ordering::SeqCst);
+    hide_theme_drag_handle(app_handle);
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
         if let Err(error) = overlay_window.hide() {
             log::error!("Failed to hide disabled overlay window: {error}");
@@ -1163,6 +1429,7 @@ fn hide_overlay_window(app_handle: &AppHandle) {
         // Hide the window after a short delay to allow animation to complete,
         // unless a newer session has shown the overlay again by then.
         let window_clone = overlay_window.clone();
+        let drag_handle_clone = app_handle.get_webview_window("recording_overlay_drag_handle");
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(300));
             if OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst) != scheduled_at {
@@ -1170,6 +1437,9 @@ fn hide_overlay_window(app_handle: &AppHandle) {
                 return;
             }
             let _ = window_clone.hide();
+            if let Some(handle_window) = drag_handle_clone {
+                let _ = handle_window.hide();
+            }
         });
     }
 }
@@ -1540,5 +1810,57 @@ mod tests {
             ),
             (-1530, 1040, 500, 150)
         );
+    }
+
+    #[test]
+    fn themed_overlay_retains_a_dragged_origin_across_state_replacement() {
+        let dragged = PhysicalPosition::new(240, 360);
+        let first_anchor = PhysicalPosition::new(810, 790);
+        let next_state_anchor = PhysicalPosition::new(900, 860);
+
+        assert_eq!(
+            resolved_overlay_origin(true, Some(dragged), first_anchor),
+            dragged
+        );
+        assert_eq!(
+            resolved_overlay_origin(true, Some(dragged), next_state_anchor),
+            dragged
+        );
+    }
+
+    #[test]
+    fn classic_overlay_ignores_a_retained_theme_origin() {
+        assert_eq!(
+            resolved_overlay_origin(
+                false,
+                Some(PhysicalPosition::new(240, 360)),
+                PhysicalPosition::new(900, 860),
+            ),
+            PhysicalPosition::new(900, 860)
+        );
+    }
+
+    #[test]
+    fn compact_drag_handle_round_trips_to_the_theme_origin() {
+        let theme_origin = PhysicalPosition::new(900, 600);
+        let (handle_origin, handle_size) =
+            theme_drag_handle_bounds(theme_origin, 1.5, 300.0, 230.0);
+
+        assert_eq!(handle_origin, PhysicalPosition::new(1092, 609));
+        assert_eq!(handle_size, PhysicalSize::new(66, 27));
+        assert_eq!(
+            theme_origin_from_drag_handle(handle_origin, 1.5, 300.0),
+            theme_origin
+        );
+        assert!(
+            i64::from(handle_size.width) * i64::from(handle_size.height)
+                < (300.0_f64 * 1.5 * 230.0 * 1.5 * 0.03) as i64
+        );
+    }
+
+    #[test]
+    fn programmatic_handle_moves_do_not_retain_a_custom_origin() {
+        assert!(!should_accept_theme_drag_move(false));
+        assert!(should_accept_theme_drag_move(true));
     }
 }

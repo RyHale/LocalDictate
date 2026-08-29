@@ -650,7 +650,7 @@ fn default_active_theme_pack() -> String {
 }
 
 fn default_post_process_enabled() -> bool {
-    true
+    false
 }
 
 fn default_app_language() -> String {
@@ -1666,7 +1666,7 @@ mod tests {
     }
 
     #[test]
-    fn personal_defaults_enable_codex_cleanup_and_keep_the_model_resident() {
+    fn personal_defaults_keep_cleanup_opt_in_and_the_model_resident() {
         let settings = get_default_settings();
 
         assert!(settings.push_to_talk);
@@ -1676,7 +1676,7 @@ mod tests {
         #[cfg(target_os = "windows")]
         assert_eq!(settings.overlay_style, OverlayStyle::Live);
         assert_eq!(settings.model_unload_timeout, ModelUnloadTimeout::Never);
-        assert!(settings.post_process_enabled);
+        assert!(!settings.post_process_enabled);
         assert_eq!(settings.post_process_provider_id, CODEX_CLI_PROVIDER_ID);
         assert_eq!(
             settings.post_process_selected_prompt_id.as_deref(),
