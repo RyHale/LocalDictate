@@ -1,16 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { ask, open } from "@tauri-apps/plugin-dialog";
 import {
   Check,
-  Code2,
   ImageOff,
   LoaderCircle,
   Mic2,
-  PackagePlus,
   RefreshCw,
-  ShieldAlert,
-  Trash2,
   Waves,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -28,13 +23,9 @@ interface ThemePackSelectorProps {
   grouped?: boolean;
 }
 
-type BusyAction =
-  | { kind: "install" }
-  | { kind: "apply"; id: string }
-  | { kind: "remove"; id: string }
-  | null;
+type BusyAction = { kind: "apply"; id: string } | null;
 
-const CODE_THEME_TRUST_REQUIRED = "CODE_THEME_TRUST_REQUIRED";
+const AVAILABLE_THEME_IDS = new Set(["classic", "pirate-scribe"]);
 
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -56,9 +47,6 @@ const previewUrlFor = (pack: ThemePackInfo): string | null => {
     "asset",
   );
 };
-
-const isCodeTheme = (pack: ThemePackInfo): boolean =>
-  pack.codeTheme || pack.manifest.overlay.renderer === "web";
 
 export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
   grouped = false,
@@ -92,10 +80,12 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
 
       const activeId = activeResult.data.manifest.id;
       setPacks(
-        packsResult.data.map((pack) => ({
-          ...pack,
-          active: pack.manifest.id === activeId,
-        })),
+        packsResult.data
+          .filter((pack) => AVAILABLE_THEME_IDS.has(pack.manifest.id))
+          .map((pack) => ({
+            ...pack,
+            active: pack.manifest.id === activeId,
+          })),
       );
     } catch (error) {
       const message = errorMessage(error);
@@ -109,61 +99,6 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
   useEffect(() => {
     void loadThemePacks();
   }, [loadThemePacks]);
-
-  const installFromDirectory = async (
-    sourcePath: string,
-    trustCode: boolean,
-  ): Promise<ThemePackInfo | null> => {
-    let installError: unknown;
-    try {
-      const result = await commands.installThemePack(sourcePath, trustCode);
-      if (result.status === "ok") return result.data;
-      installError = result.error;
-    } catch (error) {
-      installError = error;
-    }
-
-    if (
-      !trustCode &&
-      errorMessage(installError).includes(CODE_THEME_TRUST_REQUIRED)
-    ) {
-      const trusted = await ask(t("themePacks.trust.confirmDescription"), {
-        title: t("themePacks.trust.confirmTitle"),
-        kind: "warning",
-        okLabel: t("themePacks.trust.installCode"),
-        cancelLabel: t("themePacks.actions.cancel"),
-      });
-      if (!trusted) return null;
-      return installFromDirectory(sourcePath, true);
-    }
-
-    throw new Error(errorMessage(installError));
-  };
-
-  const handleInstall = async () => {
-    const selected = await open({
-      directory: true,
-      multiple: false,
-      title: t("themePacks.importDialogTitle"),
-    });
-    if (typeof selected !== "string") return;
-
-    setBusyAction({ kind: "install" });
-    try {
-      const installed = await installFromDirectory(selected, false);
-      if (!installed) return;
-
-      await loadThemePacks();
-      toast.success(t("themePacks.success.installed"), {
-        description: installed.manifest.name,
-      });
-    } catch (error) {
-      const message = errorMessage(error);
-      toast.error(t("themePacks.errors.install"), { description: message });
-    } finally {
-      setBusyAction(null);
-    }
-  };
 
   const handleApply = async (id: string) => {
     setBusyAction({ kind: "apply", id });
@@ -195,38 +130,6 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
     }
   };
 
-  const handleRemove = async (pack: ThemePackInfo) => {
-    const confirmed = await ask(
-      t("themePacks.remove.confirmDescription", {
-        name: pack.manifest.name,
-      }),
-      {
-        title: t("themePacks.remove.confirmTitle"),
-        kind: "warning",
-        okLabel: t("themePacks.actions.remove"),
-        cancelLabel: t("themePacks.actions.cancel"),
-      },
-    );
-    if (!confirmed) return;
-
-    setBusyAction({ kind: "remove", id: pack.manifest.id });
-    try {
-      const result = await commands.removeThemePack(pack.manifest.id);
-      if (result.status === "error") throw new Error(result.error);
-
-      await loadThemePacks();
-      await refreshSettings();
-      toast.success(t("themePacks.success.removed"), {
-        description: pack.manifest.name,
-      });
-    } catch (error) {
-      const message = errorMessage(error);
-      toast.error(t("themePacks.errors.remove"), { description: message });
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
   const isBusy = busyAction !== null;
 
   return (
@@ -253,43 +156,19 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
           <p className="text-xs text-mid-gray">
             {t("themePacks.count", { count: packs.length })}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => void loadThemePacks()}
-              disabled={isLoading || isBusy}
-            >
-              <RefreshCw
-                className={`mr-1.5 inline h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
-                aria-hidden="true"
-              />
-              {t("themePacks.actions.refresh")}
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => void handleInstall()}
-              disabled={isLoading || isBusy}
-            >
-              {busyAction?.kind === "install" ? (
-                <LoaderCircle
-                  className="mr-1.5 inline h-3.5 w-3.5 animate-spin"
-                  aria-hidden="true"
-                />
-              ) : (
-                <PackagePlus
-                  className="mr-1.5 inline h-3.5 w-3.5"
-                  aria-hidden="true"
-                />
-              )}
-              {busyAction?.kind === "install"
-                ? t("themePacks.actions.installing")
-                : t("themePacks.actions.install")}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => void loadThemePacks()}
+            disabled={isLoading || isBusy}
+          >
+            <RefreshCw
+              className={`mr-1.5 inline h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+            {t("themePacks.actions.refresh")}
+          </Button>
         </div>
 
         {loadError ? (
@@ -318,9 +197,6 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
               const previewFailed = failedPreviews.has(id);
               const applying =
                 busyAction?.kind === "apply" && busyAction.id === id;
-              const removing =
-                busyAction?.kind === "remove" && busyAction.id === id;
-              const codeTheme = isCodeTheme(pack);
               const preset = pack.manifest.preset;
               const presetFeatures = [t("themePacks.features.overlay")];
               if (preset?.appearance || preset?.accent) {
@@ -396,12 +272,6 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
                           <span className="rounded-full bg-mid-gray/15 px-2 py-0.5 text-[11px] font-medium text-text/65">
                             {t(`themePacks.sources.${pack.source}`)}
                           </span>
-                          {codeTheme ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/15 px-2 py-0.5 text-[11px] font-medium text-yellow-400">
-                              <Code2 className="h-3 w-3" aria-hidden="true" />
-                              {t("themePacks.codeTheme")}
-                            </span>
-                          ) : null}
                         </div>
                       </div>
                       <p className="mt-0.5 text-xs text-mid-gray">
@@ -455,44 +325,7 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
                       </ul>
                     </div>
 
-                    {codeTheme ? (
-                      <div
-                        role="note"
-                        className="flex items-start gap-2 rounded-lg bg-yellow-500/10 px-2.5 py-2 text-xs leading-relaxed text-yellow-400"
-                      >
-                        <ShieldAlert
-                          className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                          aria-hidden="true"
-                        />
-                        <span>{t("themePacks.trust.cardWarning")}</span>
-                      </div>
-                    ) : null}
-
                     <div className="flex flex-wrap justify-end gap-2 border-t border-mid-gray/10 pt-3">
-                      {pack.source === "installed" ? (
-                        <Button
-                          type="button"
-                          variant="danger-ghost"
-                          size="sm"
-                          disabled={isBusy}
-                          onClick={() => void handleRemove(pack)}
-                        >
-                          {removing ? (
-                            <LoaderCircle
-                              className="mr-1.5 inline h-3.5 w-3.5 animate-spin"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <Trash2
-                              className="mr-1.5 inline h-3.5 w-3.5"
-                              aria-hidden="true"
-                            />
-                          )}
-                          {removing
-                            ? t("themePacks.actions.removing")
-                            : t("themePacks.actions.remove")}
-                        </Button>
-                      ) : null}
                       <Button
                         type="button"
                         variant={pack.active ? "secondary" : "primary"}
@@ -532,13 +365,9 @@ export const ThemePackSelector: React.FC<ThemePackSelectorProps> = ({
         <span className="sr-only" aria-live="polite">
           {busyAction?.kind === "apply"
             ? t("themePacks.status.applying")
-            : busyAction?.kind === "remove"
-              ? t("themePacks.status.removing")
-              : busyAction?.kind === "install"
-                ? t("themePacks.status.installing")
-                : activePackId
-                  ? t("themePacks.status.active", { id: activePackId })
-                  : ""}
+            : activePackId
+              ? t("themePacks.status.active", { id: activePackId })
+              : ""}
         </span>
       </div>
     </SettingContainer>

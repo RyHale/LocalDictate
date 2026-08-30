@@ -47,13 +47,8 @@ describe("bundled theme packs", async () => {
     .map((entry) => entry.name)
     .sort();
 
-  test("ships the four reference renderer packs", () => {
-    expect(packDirectories).toEqual([
-      "neon-codex",
-      "pirate-scribe",
-      "signal-garden",
-      "stellar-murmuration",
-    ]);
+  test("ships only the Pirate Scribe animated pack", () => {
+    expect(packDirectories).toEqual(["pirate-scribe"]);
   });
 
   for (const directory of packDirectories) {

@@ -13,6 +13,8 @@ pub const CODEX_CLI_PROVIDER_ID: &str = "codex_cli";
 pub const CODEX_CLI_DEFAULT_MODEL_ID: &str = "gpt-5.6-luna";
 pub const CUSTOM_CLI_PROVIDER_ID: &str = "custom_cli";
 pub const CUSTOM_CLI_DEFAULT_MODEL_ID: &str = "cli_default";
+const CLASSIC_THEME_PACK_ID: &str = "classic";
+const PIRATE_THEME_PACK_ID: &str = "pirate-scribe";
 pub const DEFAULT_TRANSCRIPTION_MODEL_ID: &str =
     "handy-computer/parakeet-unified-en-0.6b-gguf/parakeet-unified-en-0.6b-Q8_0.gguf";
 
@@ -655,7 +657,19 @@ fn default_theme() -> Theme {
 }
 
 fn default_active_theme_pack() -> String {
-    "classic".to_string()
+    CLASSIC_THEME_PACK_ID.to_string()
+}
+
+fn ensure_supported_theme_pack(settings: &mut AppSettings) -> bool {
+    if matches!(
+        settings.active_theme_pack.as_str(),
+        CLASSIC_THEME_PACK_ID | PIRATE_THEME_PACK_ID
+    ) {
+        return false;
+    }
+
+    settings.active_theme_pack = CLASSIC_THEME_PACK_ID.to_string();
+    true
 }
 
 fn default_post_process_enabled() -> bool {
@@ -1173,7 +1187,9 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    if ensure_post_process_defaults(&mut settings) {
+    let changed =
+        ensure_post_process_defaults(&mut settings) | ensure_supported_theme_pack(&mut settings);
+    if changed {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
@@ -1414,6 +1430,18 @@ mod tests {
         assert_eq!(settings.active_theme_pack, "classic");
         assert_eq!(settings.ui_font_size, UiFontSize::Standard);
         assert_eq!(settings.widget_animation, WidgetAnimation::Full);
+    }
+
+    #[test]
+    fn unsupported_theme_pack_selection_migrates_to_classic() {
+        let mut settings = get_default_settings();
+        settings.active_theme_pack = "signal-garden".to_string();
+
+        assert!(ensure_supported_theme_pack(&mut settings));
+        assert_eq!(settings.active_theme_pack, CLASSIC_THEME_PACK_ID);
+
+        settings.active_theme_pack = PIRATE_THEME_PACK_ID.to_string();
+        assert!(!ensure_supported_theme_pack(&mut settings));
     }
 
     fn default_settings_json() -> serde_json::Value {

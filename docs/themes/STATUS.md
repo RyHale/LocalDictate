@@ -14,6 +14,7 @@ reference packs, and complete a blind quality review.
 - One-click optional appearance and post-processing preset application.
 - Underlying settings remain independently editable after application.
 - No deploy, publication, PR, or external account mutation.
+- The built-in picker intentionally ships only Classic and Pirate Scribe.
 
 ## Working state
 
@@ -56,11 +57,9 @@ reference packs, and complete a blind quality review.
 
 ## Validation recorded
 
-- Zod Theme Pack v1 validation passes for `neon-codex`, `pirate-scribe`,
-  `stellar-murmuration`, and `signal-garden`.
+- Zod Theme Pack v1 validation passes for the bundled `pirate-scribe` pack.
 - Generated PNGs have real 32-bit alpha and remain under the v1 atlas/package
   limits.
-- `signal-garden/web/theme.js` imports as an ES module and exports `mount`.
 - `bun run build`, `bun run lint`, `bunx tsc --noEmit`, translation parity,
   focused Prettier, and 15 Theme Pack/runtime tests pass.
 - `scripts/windows.ps1 test` passes all 264 Rust tests; `cargo fmt --check`

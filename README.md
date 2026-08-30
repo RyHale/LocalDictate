@@ -83,13 +83,13 @@ LocalDictate creates a fresh, read-only Codex turn for each request. It disables
 
 You can also connect a local model, another hosted provider, or a command-line tool:
 
-| Connection | Available options | Current maturity |
-| ---------- | ----------------- | ---------------- |
-| Signed-in CLI | Codex CLI | Primary path; most exercised |
-| Custom CLI | Claude Code, OpenCode, or another non-interactive tool that reads stdin and writes stdout | Beta |
-| Hosted API | OpenAI, Z.AI, OpenRouter, Anthropic, Groq, Cerebras, or AWS Bedrock through Mantle | Beta |
-| Local or self-hosted API | Ollama, LM Studio, or another OpenAI-compatible `/v1` endpoint | Beta |
-| Apple Intelligence | Supported Apple Silicon Macs | Beta and platform-specific |
+| Connection               | Available options                                                                         | Current maturity             |
+| ------------------------ | ----------------------------------------------------------------------------------------- | ---------------------------- |
+| Signed-in CLI            | Codex CLI                                                                                 | Primary path; most exercised |
+| Custom CLI               | Claude Code, OpenCode, or another non-interactive tool that reads stdin and writes stdout | Beta                         |
+| Hosted API               | OpenAI, Z.AI, OpenRouter, Anthropic, Groq, Cerebras, or AWS Bedrock through Mantle        | Beta                         |
+| Local or self-hosted API | Ollama, LM Studio, or another OpenAI-compatible `/v1` endpoint                            | Beta                         |
+| Apple Intelligence       | Supported Apple Silicon Macs                                                              | Beta and platform-specific   |
 
 > [!CAUTION]
 > **Non-Codex cleanup connections are still rough and need broader real-world testing.** The shared OpenAI-compatible request contract and Custom CLI stdin/stdout bridge are covered by automated tests, but most individual providers have not been exercised here with live credentials, every model, or every server version. Expect occasional compatibility issues. If cleanup fails, LocalDictate falls back to the raw transcript instead of losing your dictation.
@@ -106,7 +106,7 @@ For example, Claude Code can start with `-p`, `--no-session-persistence`, and `-
 - Configurable clipboard restoration and paste behavior
 - Light, dark, and system themes with accent and text-size controls
 - Full, reduced, or disabled overlay animation
-- Importable widget themes and reusable cleanup profiles
+- Classic and Pirate Scribe recording displays, plus reusable cleanup profiles
 - System tray controls and launch-at-login support
 
 ## Build from source

@@ -10,8 +10,10 @@ one action. Those underlying settings remain
 independent: after a theme is applied, changing one setting does not silently
 reapply the theme.
 
-Theme packs are also the public mod boundary. Built-in and user-installed
-themes use the same manifest and renderer APIs.
+Theme packs define the internal display-package boundary. The production
+settings UI currently exposes only Classic and the bundled Pirate Scribe pack.
+The importer and additional renderer APIs remain implemented and tested, but
+third-party pack installation is not a supported product surface.
 
 ## Package layout
 
@@ -24,9 +26,9 @@ my-theme/
     theme.js
 ```
 
-The settings UI installs a pack by selecting its directory. The backend command
-also accepts the directory's `manifest.json`. The app copies validated files
-into its application-data theme directory; archive/ZIP import is not part of
+The backend importer accepts a pack directory or its `manifest.json` and copies
+validated files into the application-data theme directory. The production
+settings UI does not expose that importer. Archive/ZIP import is not part of
 v1. Pack IDs are lowercase ASCII slugs and are the stable setting value.
 
 ## Manifest shape
@@ -135,8 +137,8 @@ or WebGL rendering. It runs inside a sandboxed iframe with a narrow
 `postMessage` bridge. It receives `ThemeSignal` and resolved asset URLs only.
 It does not receive Tauri APIs, filesystem access, credentials, clipboard
 access, or parent DOM access. Network access is disabled by the iframe content
-security policy. The settings UI labels these packs as code themes and requires
-an explicit trust confirmation before installation.
+security policy. The backend importer requires explicit trust for code themes,
+although third-party installation is not exposed in the production settings UI.
 
 The entry is a self-contained ES module exporting `mount` or a default
 function. Relative, static, and remote module imports are not supported; authors

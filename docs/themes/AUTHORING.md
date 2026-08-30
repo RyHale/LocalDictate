@@ -1,48 +1,28 @@
 # Authoring LocalDictate Theme Packs
 
-Theme Pack v1 lets a mod change the recording overlay and optionally apply an
-appearance and post-processing preset. A pack is a normal
-directory. ZIP and other archive imports are not supported in v1.
+Theme Pack v1 defines the internal recording-overlay package format. The
+product picker intentionally exposes only Classic and Pirate Scribe. Third-party
+pack installation is not exposed in the settings UI.
 
-The fastest starting point is to copy one of the four bundled examples:
+The fastest starting point is to copy the bundled example:
 
-- [Neon Codex](../../src-tauri/resources/themes/neon-codex/manifest.json) uses
-  the `reactive-image` renderer.
 - [Pirate Scribe](../../src-tauri/resources/themes/pirate-scribe/manifest.json)
   uses the `sprite` renderer and a post-processing profile.
-- [Stellar Murmuration](../../src-tauri/resources/themes/stellar-murmuration/manifest.json)
-  uses the declarative `particles` renderer.
-- [Signal Garden](../../src-tauri/resources/themes/signal-garden/manifest.json)
-  uses the sandboxed `web` renderer.
 
-## Install, apply, and remove
+Minimal manifests for the other supported renderers are included below.
 
-Open the Themes setting and choose **Install theme**, then select the directory
-that contains `manifest.json`. Installation validates and copies the pack into
-LocalDictate's application-data theme directory. It does not apply the pack.
-The backend install command also accepts a direct path to `manifest.json`, but
-the current file picker selects directories.
+## Apply behavior
 
-Choose **Apply** after installation. Applying a pack:
+Choosing a recording display applies its preset:
 
 1. activates its overlay;
 2. changes only the appearance, accent, and post-processing fields that
    are present in `preset`; and
 3. leaves those settings independently editable afterward.
 
-A theme is a one-time preset, not a permanent lock. It does not silently
-reapply itself after you change an individual setting. Installing the same ID
-again updates that installed pack. IDs used by bundled packs cannot be
-overridden.
-
-Only installed packs can be removed. Classic and bundled packs cannot. If you
-remove the active installed pack, the overlay falls back to Classic. Appearance
-and post-processing changes already applied by the pack remain individual
-settings.
-
-Web themes contain executable JavaScript. LocalDictate shows a code warning and
-requires explicit confirmation before copying one. Declarative themes do not
-show that warning.
+A display preset is a one-time change, not a permanent lock. It does not
+silently reapply itself after you change an individual setting. Any retired or
+unsupported selection migrates to Classic.
 
 ## Package layout
 
@@ -613,9 +593,10 @@ independently of theme rendering.
    bun -e "import { readFileSync } from 'node:fs'; import { ThemeManifestV1Schema } from './src/themes/schema.ts'; const path = process.argv[1]; ThemeManifestV1Schema.parse(JSON.parse(readFileSync(path, 'utf8'))); console.log('valid: ' + path);" ./path/to/my-theme/manifest.json
    ```
 
-4. Open LocalDictate's Themes setting, install the pack directory, and apply it.
-   The app installer is the authoritative check for file limits, headers, safe
-   paths, and profile rules that the Zod command does not cover.
+4. Run `scripts/windows.ps1 test`. The backend importer tests are the
+   authoritative check for file limits, headers, safe paths, and profile rules
+   that the Zod command does not cover. The production picker does not expose
+   third-party installation.
 5. Exercise `idle`, start a recording to see `arming` and `listening`, then stop
    to see `transcribing`. Enable a working post-processing setup to exercise
    `processing`.
@@ -626,9 +607,6 @@ independently of theme rendering.
    particle/web image.
 8. Confirm the transparent canvas does not block clicks. Prefer
    `pointerMode: "passthrough"`.
-9. Reinstall the same ID after edits. An active pack reloads its visual files and
-   window geometry immediately, without reapplying its preset. Choose **Apply
-   preset** again when you also want to restore its one-time settings.
 
 For repository changes, also run the focused runtime tests:
 
