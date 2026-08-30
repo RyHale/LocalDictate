@@ -12,7 +12,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { commands } from "@/bindings";
+import {
+  commands,
+  type CodexCliStatus,
+  type CustomCliStatus,
+} from "@/bindings";
 
 import { Alert } from "../../ui/Alert";
 import { SettingContainer, SettingsGroup, Textarea } from "@/components/ui";
@@ -26,23 +30,12 @@ import { ApiKeyField } from "../PostProcessingSettingsApi/ApiKeyField";
 import { ModelSelect } from "../PostProcessingSettingsApi/ModelSelect";
 import { usePostProcessProviderState } from "../PostProcessingSettingsApi/usePostProcessProviderState";
 import { ShortcutInput } from "../ShortcutInput";
+import { PostProcessingToggle } from "../PostProcessingToggle";
 import { useSettings } from "../../../hooks/useSettings";
-
-type CodexState =
-  | "ready"
-  | "not_installed"
-  | "not_authenticated"
-  | "non_chatgpt_authentication"
-  | "error";
-
-type CodexStatus = {
-  state: CodexState;
-  version?: string | null;
-};
 
 const CodexCliStatusPanel: React.FC = () => {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<CodexStatus | null>(null);
+  const [status, setStatus] = useState<CodexCliStatus | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
   const refreshStatus = useCallback(async () => {
@@ -51,7 +44,7 @@ const CodexCliStatusPanel: React.FC = () => {
       const nextStatus = await commands.getCodexCliStatus();
       setStatus(nextStatus);
     } catch {
-      setStatus({ state: "error" });
+      setStatus({ state: "error", version: null });
     } finally {
       setIsChecking(false);
     }
@@ -115,12 +108,154 @@ const CodexCliStatusPanel: React.FC = () => {
   );
 };
 
+const CustomCliStatusPanel: React.FC<{ executable: string }> = ({
+  executable,
+}) => {
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<CustomCliStatus | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+
+  const refreshStatus = useCallback(async () => {
+    setIsChecking(true);
+    try {
+      const nextStatus = await commands.getCustomCliStatus();
+      setStatus(nextStatus);
+    } catch {
+      setStatus({ state: "error", version: null });
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshStatus();
+  }, [executable, refreshStatus]);
+
+  const message = (() => {
+    if (!status || isChecking) {
+      return t("settings.postProcessing.api.customCli.checking");
+    }
+    switch (status.state) {
+      case "ready":
+        return t("settings.postProcessing.api.customCli.ready");
+      case "not_configured":
+        return t("settings.postProcessing.api.customCli.notConfigured");
+      case "not_installed":
+        return t("settings.postProcessing.api.customCli.notInstalled");
+      default:
+        return t("settings.postProcessing.api.customCli.error");
+    }
+  })();
+
+  const variant = status?.state === "ready" ? "success" : "warning";
+
+  return (
+    <div className="space-y-3 px-4 py-3">
+      <Alert variant={variant}>
+        <span>
+          {message}
+          {status?.version ? (
+            <span className="mt-1 block opacity-80">{status.version}</span>
+          ) : null}
+        </span>
+      </Alert>
+      <Alert variant="info">
+        {t("settings.postProcessing.api.customCli.contract")}
+      </Alert>
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={isChecking}
+          onClick={() => void refreshStatus()}
+        >
+          {t("settings.postProcessing.api.customCli.refresh")}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+type CustomCliConfigurationProps = {
+  executable: string;
+  argumentsValue: string;
+  onExecutableBlur: (value: string) => void;
+  onArgumentsBlur: (value: string) => void;
+  executableUpdating: boolean;
+  argumentsUpdating: boolean;
+};
+
+const CustomCliConfiguration: React.FC<CustomCliConfigurationProps> = ({
+  executable,
+  argumentsValue,
+  onExecutableBlur,
+  onArgumentsBlur,
+  executableUpdating,
+  argumentsUpdating,
+}) => {
+  const { t } = useTranslation();
+  const [localExecutable, setLocalExecutable] = useState(executable);
+  const [localArguments, setLocalArguments] = useState(argumentsValue);
+
+  useEffect(() => setLocalExecutable(executable), [executable]);
+  useEffect(() => setLocalArguments(argumentsValue), [argumentsValue]);
+
+  return (
+    <>
+      <SettingContainer
+        title={t("settings.postProcessing.api.customCli.executable.title")}
+        description={t(
+          "settings.postProcessing.api.customCli.executable.description",
+        )}
+        descriptionMode="tooltip"
+        layout="horizontal"
+        grouped={true}
+      >
+        <Input
+          type="text"
+          value={localExecutable}
+          onChange={(event) => setLocalExecutable(event.target.value)}
+          onBlur={() => onExecutableBlur(localExecutable)}
+          placeholder={t(
+            "settings.postProcessing.api.customCli.executable.placeholder",
+          )}
+          variant="compact"
+          disabled={executableUpdating}
+          className="min-w-[380px]"
+        />
+      </SettingContainer>
+      <SettingContainer
+        title={t("settings.postProcessing.api.customCli.arguments.title")}
+        description={t(
+          "settings.postProcessing.api.customCli.arguments.description",
+        )}
+        descriptionMode="inline"
+        layout="stacked"
+        grouped={true}
+      >
+        <Textarea
+          value={localArguments}
+          onChange={(event) => setLocalArguments(event.target.value)}
+          onBlur={() => onArgumentsBlur(localArguments)}
+          placeholder={t(
+            "settings.postProcessing.api.customCli.arguments.placeholder",
+          )}
+          disabled={argumentsUpdating}
+          className="min-h-28 font-mono font-normal"
+        />
+      </SettingContainer>
+    </>
+  );
+};
+
 const PostProcessingSettingsApiComponent: React.FC = () => {
   const { t } = useTranslation();
   const state = usePostProcessProviderState();
   const providerSourceUrl = (() => {
     if (!state.selectedProvider) return null;
     if (state.isCodexProvider) return "https://developers.openai.com/codex/cli";
+    if (state.isCliProvider) return null;
     if (state.isAppleProvider)
       return "https://developer.apple.com/apple-intelligence/";
     return state.selectedProvider.base_url.startsWith("http")
@@ -129,9 +264,11 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
   })();
   const providerSourceLabel = state.isCodexProvider
     ? t("settings.postProcessing.api.provider.codexConnection")
-    : state.isAppleProvider
-      ? t("settings.postProcessing.api.provider.appleConnection")
-      : state.selectedProvider?.base_url;
+    : state.isCliProvider
+      ? t("settings.postProcessing.api.provider.customCliConnection")
+      : state.isAppleProvider
+        ? t("settings.postProcessing.api.provider.appleConnection")
+        : state.selectedProvider?.base_url;
 
   return (
     <>
@@ -181,6 +318,18 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
         ) : null
       ) : state.isCodexProvider ? (
         <CodexCliStatusPanel />
+      ) : state.isCliProvider ? (
+        <>
+          <CustomCliStatusPanel executable={state.cliExecutable} />
+          <CustomCliConfiguration
+            executable={state.cliExecutable}
+            argumentsValue={state.cliArguments}
+            onExecutableBlur={state.handleCliExecutableChange}
+            onArgumentsBlur={state.handleCliArgumentsChange}
+            executableUpdating={state.isCliExecutableUpdating}
+            argumentsUpdating={state.isCliArgumentsUpdating}
+          />
+        </>
       ) : (
         <>
           {state.selectedProvider?.id === "custom" && (
@@ -227,7 +376,7 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
         </>
       )}
 
-      {!state.isAppleProvider && (
+      {!state.isAppleProvider && !state.isCliProvider && (
         <SettingContainer
           title={t("settings.postProcessing.api.model.title")}
           description={
@@ -263,18 +412,16 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
               onBlur={() => {}}
               className="flex-1 min-w-[380px]"
             />
-            {!state.isCodexProvider && (
-              <ResetButton
-                onClick={state.handleRefreshModels}
-                disabled={state.isFetchingModels}
-                ariaLabel={t("settings.postProcessing.api.model.refreshModels")}
-                className="flex h-10 w-10 items-center justify-center"
-              >
-                <RefreshCcw
-                  className={`h-4 w-4 ${state.isFetchingModels ? "animate-spin" : ""}`}
-                />
-              </ResetButton>
-            )}
+            <ResetButton
+              onClick={state.handleRefreshModels}
+              disabled={state.isFetchingModels}
+              ariaLabel={t("settings.postProcessing.api.model.refreshModels")}
+              className="flex h-10 w-10 items-center justify-center"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${state.isFetchingModels ? "animate-spin" : ""}`}
+              />
+            </ResetButton>
           </div>
         </SettingContainer>
       )}
@@ -734,6 +881,10 @@ export const PostProcessingSettings: React.FC = () => {
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
+      <SettingsGroup>
+        <PostProcessingToggle descriptionMode="inline" grouped={true} />
+      </SettingsGroup>
+
       <SettingsGroup title={t("settings.postProcessing.hotkey.title")}>
         <ShortcutInput
           shortcutId="transcribe_with_post_process"

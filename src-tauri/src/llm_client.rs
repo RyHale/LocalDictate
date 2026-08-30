@@ -136,7 +136,7 @@ struct ChatMessageResponse {
 }
 
 /// Build headers for API requests based on provider type
-fn build_headers(provider: &PostProcessProvider, api_key: &str) -> Result<HeaderMap, String> {
+fn build_headers(_provider: &PostProcessProvider, api_key: &str) -> Result<HeaderMap, String> {
     let mut headers = HeaderMap::new();
 
     // Common headers
@@ -151,22 +151,15 @@ fn build_headers(provider: &PostProcessProvider, api_key: &str) -> Result<Header
     );
     headers.insert("X-Title", HeaderValue::from_static("LocalDictate"));
 
-    // Provider-specific auth headers
+    // Every built-in HTTP provider exposes an OpenAI-compatible endpoint and
+    // accepts the standard bearer-token header, including Anthropic's
+    // compatibility API.
     if !api_key.is_empty() {
-        if provider.id == "anthropic" {
-            headers.insert(
-                "x-api-key",
-                HeaderValue::from_str(api_key)
-                    .map_err(|e| format!("Invalid API key header value: {}", e))?,
-            );
-            headers.insert("anthropic-version", HeaderValue::from_static("2023-06-01"));
-        } else {
-            headers.insert(
-                AUTHORIZATION,
-                HeaderValue::from_str(&format!("Bearer {}", api_key))
-                    .map_err(|e| format!("Invalid authorization header value: {}", e))?,
-            );
-        }
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", api_key))
+                .map_err(|e| format!("Invalid authorization header value: {}", e))?,
+        );
     }
 
     Ok(headers)
@@ -532,6 +525,7 @@ mod tests {
     use super::*;
     use std::fmt;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::sync::oneshot;
 
     #[derive(Debug)]
     struct TestError {
@@ -594,6 +588,56 @@ mod tests {
         });
 
         format!("http://{address}")
+    }
+
+    async fn serve_one_captured_response(
+        status: &str,
+        body: &str,
+    ) -> (String, oneshot::Receiver<String>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let response = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        let (request_sender, request_receiver) = oneshot::channel();
+
+        tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = Vec::new();
+            let mut buffer = [0_u8; 2048];
+
+            loop {
+                let bytes_read = stream.read(&mut buffer).await.unwrap();
+                if bytes_read == 0 {
+                    break;
+                }
+                request.extend_from_slice(&buffer[..bytes_read]);
+
+                let Some(header_end) = request.windows(4).position(|window| window == b"\r\n\r\n")
+                else {
+                    continue;
+                };
+                let header_text = String::from_utf8_lossy(&request[..header_end]);
+                let content_length = header_text
+                    .lines()
+                    .find_map(|line| {
+                        let (name, value) = line.split_once(':')?;
+                        name.eq_ignore_ascii_case("content-length")
+                            .then(|| value.trim().parse::<usize>().ok())
+                            .flatten()
+                    })
+                    .unwrap_or(0);
+                if request.len() >= header_end + 4 + content_length {
+                    break;
+                }
+            }
+
+            let _ = request_sender.send(String::from_utf8(request).unwrap());
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+
+        (format!("http://{address}"), request_receiver)
     }
 
     #[test]
@@ -660,6 +704,89 @@ mod tests {
         assert!(details.contains(&format!("url: {base_url}/private")));
         assert!(!details.contains("SECRET_QUERY_TOKEN"));
         assert!(!details.contains("#private"));
+    }
+
+    #[tokio::test]
+    async fn openai_compatible_chat_contract_uses_expected_route_headers_and_body() {
+        let (base_url, captured_request) = serve_one_captured_response(
+            "200 OK",
+            r#"{"choices":[{"message":{"content":"Cleaned transcript."}}]}"#,
+        )
+        .await;
+        let provider = provider("custom", &base_url);
+
+        let result = send_chat_completion(
+            &provider,
+            "test-api-key".to_string(),
+            "local-model",
+            "Clean this transcript.".to_string(),
+            false,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.as_deref(), Some("Cleaned transcript."));
+        let request = captured_request.await.unwrap();
+        let (headers, body) = request.split_once("\r\n\r\n").unwrap();
+        let lowercase_headers = headers.to_ascii_lowercase();
+        assert!(headers.starts_with("POST /chat/completions HTTP/1.1"));
+        assert!(lowercase_headers.contains("authorization: bearer test-api-key"));
+        assert!(lowercase_headers.contains("content-type: application/json"));
+
+        let body: Value = serde_json::from_str(body).unwrap();
+        assert_eq!(body["model"], "local-model");
+        assert_eq!(body["stream"], false);
+        assert_eq!(body["messages"][0]["role"], "user");
+        assert_eq!(body["messages"][0]["content"], "Clean this transcript.");
+    }
+
+    #[tokio::test]
+    async fn anthropic_compatibility_contract_uses_bearer_auth() {
+        let (base_url, captured_request) = serve_one_captured_response(
+            "200 OK",
+            r#"{"choices":[{"message":{"content":"Cleaned by Claude."}}]}"#,
+        )
+        .await;
+        let provider = provider("anthropic", &base_url);
+
+        let result = send_chat_completion(
+            &provider,
+            "anthropic-test-key".to_string(),
+            "claude-test-model",
+            "Clean this transcript.".to_string(),
+            false,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.as_deref(), Some("Cleaned by Claude."));
+        let request = captured_request.await.unwrap();
+        let headers = request.split_once("\r\n\r\n").unwrap().0;
+        let lowercase_headers = headers.to_ascii_lowercase();
+        assert!(headers.starts_with("POST /chat/completions HTTP/1.1"));
+        assert!(lowercase_headers.contains("authorization: bearer anthropic-test-key"));
+        assert!(!lowercase_headers.contains("x-api-key:"));
+    }
+
+    #[tokio::test]
+    async fn model_catalog_contract_accepts_openai_data_shape() {
+        let (base_url, captured_request) = serve_one_captured_response(
+            "200 OK",
+            r#"{"data":[{"id":"model-a"},{"id":"model-b"}]}"#,
+        )
+        .await;
+        let provider = provider("custom", &base_url);
+
+        let models = fetch_models(&provider, "test-api-key".to_string())
+            .await
+            .unwrap();
+
+        assert_eq!(models, vec!["model-a", "model-b"]);
+        let request = captured_request.await.unwrap();
+        assert!(request.starts_with("GET /models HTTP/1.1"));
+        assert!(request
+            .to_ascii_lowercase()
+            .contains("authorization: bearer test-api-key"));
     }
 
     #[test]

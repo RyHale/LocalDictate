@@ -8,6 +8,7 @@ pub mod cli;
 mod clipboard;
 mod codex_cli;
 mod commands;
+mod custom_cli;
 mod helpers;
 mod input;
 mod llm_client;
@@ -660,6 +661,8 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_post_process_base_url_setting,
             shortcut::change_post_process_api_key_setting,
             shortcut::change_post_process_model_setting,
+            shortcut::change_post_process_cli_executable_setting,
+            shortcut::change_post_process_cli_arguments_setting,
             shortcut::set_post_process_provider,
             shortcut::fetch_post_process_models,
             shortcut::add_post_process_prompt,
@@ -708,6 +711,7 @@ pub fn run(cli_args: CliArgs) {
             commands::open_app_data_dir,
             commands::check_apple_intelligence_available,
             codex_cli::get_codex_cli_status,
+            custom_cli::get_custom_cli_status,
             commands::initialize_enigo,
             commands::initialize_shortcuts,
             commands::models::get_available_models,

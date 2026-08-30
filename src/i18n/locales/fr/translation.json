@@ -446,8 +446,29 @@
           "description": "Sélectionnez un fournisseur compatible OpenAI.",
           "source": "Connection",
           "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "customCliConnection": "Local command-line provider",
           "appleConnection": "On-device Apple Intelligence"
         },
+        "customCli": {
+          "checking": "Checking the custom CLI…",
+          "ready": "Ready — the configured executable is available.",
+          "notConfigured": "Enter a CLI executable or binary path to connect it.",
+          "notInstalled": "The configured CLI executable was not found.",
+          "error": "LocalDictate could not run this CLI's version check. Verify the binary path; raw dictation still works.",
+          "contract": "LocalDictate starts one isolated, non-interactive process per cleanup. It sends the cleanup request over stdin and reads plain cleaned text from stdout. Authentication stays with the CLI. Arguments are passed directly without transcript interpolation; enter one argument per line.",
+          "refresh": "Check again",
+          "executable": {
+            "title": "Binary path",
+            "description": "Executable name on PATH or the full path to the CLI binary.",
+            "placeholder": "claude, gemini, opencode, or C:\\path\\to\\tool.exe"
+          },
+          "arguments": {
+            "title": "Arguments",
+            "description": "Optional non-interactive arguments, one per line. Configure the CLI to read its prompt from stdin and print only the final text to stdout.",
+            "placeholder": "--print\\n--model\\nfast-model"
+          }
+        },
+
         "appleIntelligence": {
           "unavailable": "Apple Intelligence n\u0027est pas disponible sur cet appareil. Nécessite un Mac Apple Silicon exécutant macOS Tahoe (26.0) ou une version ultérieure avec Apple Intelligence activé dans les Préférences Système."
         },
@@ -468,8 +489,9 @@
           "placeholderWithOptions": "Rechercher ou sélectionner un modèle",
           "placeholderNoOptions": "Tapez un nom de modèle",
           "refreshModels": "Actualiser les modèles",
-          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
-          "placeholderCodex": "subscription_default or a Codex model ID"
+          "descriptionCodex": "Models are read from the signed-in Codex account. GPT-5.6 Luna is recommended for fast, high-volume transcript cleanup and runs with reasoning disabled.",
+          "placeholderCodex": "Select an available Codex model",
+          "recommendedOption": "{{model}} — Recommended for cleanup"
         },
         "description": "Cleanup models are not downloaded by LocalDictate. Transcript text is sent to the selected local CLI or API endpoint. Choose Local or OpenAI-compatible to use Ollama, LM Studio, OpenRouter, or another compatible service.",
         "codex": {

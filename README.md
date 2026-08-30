@@ -81,7 +81,22 @@ codex login status
 
 LocalDictate creates a fresh, read-only Codex turn for each request. It disables tools and web access, ignores project configuration, and requires ChatGPT authentication so cleanup cannot silently switch to API billing.
 
-Advanced users can instead connect an OpenAI-compatible endpoint, Ollama, LM Studio, OpenRouter, or another supported provider. Post-processing is off by default and always remains optional.
+You can also connect a local model, another hosted provider, or a command-line tool:
+
+| Connection | Available options | Current maturity |
+| ---------- | ----------------- | ---------------- |
+| Signed-in CLI | Codex CLI | Primary path; most exercised |
+| Custom CLI | Claude Code, OpenCode, or another non-interactive tool that reads stdin and writes stdout | Beta |
+| Hosted API | OpenAI, Z.AI, OpenRouter, Anthropic, Groq, Cerebras, or AWS Bedrock through Mantle | Beta |
+| Local or self-hosted API | Ollama, LM Studio, or another OpenAI-compatible `/v1` endpoint | Beta |
+| Apple Intelligence | Supported Apple Silicon Macs | Beta and platform-specific |
+
+> [!CAUTION]
+> **Non-Codex cleanup connections are still rough and need broader real-world testing.** The shared OpenAI-compatible request contract and Custom CLI stdin/stdout bridge are covered by automated tests, but most individual providers have not been exercised here with live credentials, every model, or every server version. Expect occasional compatibility issues. If cleanup fails, LocalDictate falls back to the raw transcript instead of losing your dictation.
+
+Post-processing is off by default and always remains optional. A Custom CLI receives the cleanup request on stdin and must print only the cleaned text—or `{"transcription":"..."}`—to stdout. Enter each non-interactive CLI argument on its own line in settings.
+
+For example, Claude Code can start with `-p`, `--no-session-persistence`, and `--safe-mode` on separate lines. OpenCode can start with `run` and `--pure`. These are starting configurations, not guarantees for every CLI version or account setup.
 
 ## Made for everyday use
 

@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../hooks/useSettings";
 import { commands, type PostProcessProvider } from "@/bindings";
 import type { ModelOption } from "./types";
@@ -11,6 +12,7 @@ type PostProcessProviderState = {
   isCustomProvider: boolean;
   isAppleProvider: boolean;
   isCodexProvider: boolean;
+  isCliProvider: boolean;
   appleIntelligenceUnavailable: boolean;
   baseUrl: string;
   handleBaseUrlChange: (value: string) => void;
@@ -23,6 +25,12 @@ type PostProcessProviderState = {
   modelOptions: ModelOption[];
   isModelUpdating: boolean;
   isFetchingModels: boolean;
+  cliExecutable: string;
+  cliArguments: string;
+  handleCliExecutableChange: (value: string) => void;
+  handleCliArgumentsChange: (value: string) => void;
+  isCliExecutableUpdating: boolean;
+  isCliArgumentsUpdating: boolean;
   handleProviderSelect: (providerId: string) => void;
   handleModelSelect: (value: string) => void;
   handleModelCreate: (value: string) => void;
@@ -31,11 +39,15 @@ type PostProcessProviderState = {
 
 const APPLE_PROVIDER_ID = "apple_intelligence";
 const CODEX_PROVIDER_ID = "codex_cli";
+const CUSTOM_CLI_PROVIDER_ID = "custom_cli";
+const RECOMMENDED_CODEX_MODEL_ID = "gpt-5.6-luna";
 
 export const usePostProcessProviderState = (): PostProcessProviderState => {
+  const { t } = useTranslation();
   const {
     settings,
     isUpdating,
+    updateSetting,
     setPostProcessProvider,
     updatePostProcessBaseUrl,
     updatePostProcessApiKey,
@@ -60,6 +72,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
   const isAppleProvider = selectedProvider?.id === APPLE_PROVIDER_ID;
   const isCodexProvider = selectedProvider?.id === CODEX_PROVIDER_ID;
+  const isCliProvider = selectedProvider?.id === CUSTOM_CLI_PROVIDER_ID;
   const [appleIntelligenceUnavailable, setAppleIntelligenceUnavailable] =
     useState(false);
 
@@ -99,9 +112,11 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
       // a previous provider/base_url can persist and silently 404 at runtime.
       // Skip when the provider isn't configured yet (no API key / empty base URL)
       // to avoid unnecessary backend errors.
-      if (
+      if (providerId === CODEX_PROVIDER_ID) {
+        void fetchPostProcessModels(providerId);
+      } else if (
         providerId !== APPLE_PROVIDER_ID &&
-        providerId !== CODEX_PROVIDER_ID
+        providerId !== CUSTOM_CLI_PROVIDER_ID
       ) {
         const provider = providers.find((p) => p.id === providerId);
         const apiKey = settings?.post_process_api_keys?.[providerId] ?? "";
@@ -170,16 +185,22 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   );
 
   const handleRefreshModels = useCallback(() => {
-    if (isAppleProvider || isCodexProvider) return;
+    if (isAppleProvider || isCliProvider) return;
     void fetchPostProcessModels(selectedProviderId);
   }, [
     fetchPostProcessModels,
     isAppleProvider,
-    isCodexProvider,
+    isCliProvider,
     selectedProviderId,
   ]);
 
   const availableModelsRaw = postProcessModelOptions[selectedProviderId] || [];
+
+  useEffect(() => {
+    if (isCodexProvider && availableModelsRaw.length === 0) {
+      void fetchPostProcessModels(CODEX_PROVIDER_ID);
+    }
+  }, [fetchPostProcessModels, isCodexProvider, availableModelsRaw.length]);
 
   const modelOptions = useMemo<ModelOption[]>(() => {
     const seen = new Set<string>();
@@ -189,7 +210,15 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
       const trimmed = value?.trim();
       if (!trimmed || seen.has(trimmed)) return;
       seen.add(trimmed);
-      options.push({ value: trimmed, label: trimmed });
+      options.push({
+        value: trimmed,
+        label:
+          isCodexProvider && trimmed === RECOMMENDED_CODEX_MODEL_ID
+            ? t("settings.postProcessing.api.model.recommendedOption", {
+                model: trimmed,
+              })
+            : trimmed,
+      });
     };
 
     // Add available models from API
@@ -201,7 +230,27 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     upsert(model);
 
     return options;
-  }, [availableModelsRaw, model]);
+  }, [availableModelsRaw, isCodexProvider, model, t]);
+
+  const cliExecutable = settings?.post_process_cli_executable ?? "";
+  const cliArguments = settings?.post_process_cli_arguments ?? "";
+  const handleCliExecutableChange = useCallback(
+    (value: string) => {
+      const trimmed = value.trim();
+      if (trimmed !== cliExecutable) {
+        void updateSetting("post_process_cli_executable", trimmed);
+      }
+    },
+    [cliExecutable, updateSetting],
+  );
+  const handleCliArgumentsChange = useCallback(
+    (value: string) => {
+      if (value !== cliArguments) {
+        void updateSetting("post_process_cli_arguments", value);
+      }
+    },
+    [cliArguments, updateSetting],
+  );
 
   const isBaseUrlUpdating = isUpdating(
     `post_process_base_url:${selectedProviderId}`,
@@ -218,8 +267,6 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
   const isCustomProvider = selectedProvider?.id === "custom";
 
-  // No automatic fetching - user must click refresh button
-
   return {
     providerOptions,
     selectedProviderId,
@@ -227,6 +274,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     isCustomProvider,
     isAppleProvider,
     isCodexProvider,
+    isCliProvider,
     appleIntelligenceUnavailable,
     baseUrl,
     handleBaseUrlChange,
@@ -239,6 +287,12 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     modelOptions,
     isModelUpdating,
     isFetchingModels,
+    cliExecutable,
+    cliArguments,
+    handleCliExecutableChange,
+    handleCliArgumentsChange,
+    isCliExecutableUpdating: isUpdating("post_process_cli_executable"),
+    isCliArgumentsUpdating: isUpdating("post_process_cli_arguments"),
     handleProviderSelect,
     handleModelSelect,
     handleModelCreate,

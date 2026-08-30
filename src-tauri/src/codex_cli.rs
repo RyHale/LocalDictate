@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::collections::HashSet;
 use std::ffi::{OsStr, OsString};
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -63,6 +64,18 @@ struct PolishRequest<'a> {
 #[derive(Deserialize)]
 struct PolishResponse {
     transcription: String,
+}
+
+#[derive(Deserialize)]
+struct CodexModelCache {
+    models: Vec<CodexCachedModel>,
+}
+
+#[derive(Deserialize)]
+struct CodexCachedModel {
+    slug: String,
+    #[serde(default)]
+    visibility: String,
 }
 
 struct TempWorkspace {
@@ -177,6 +190,51 @@ pub async fn get_codex_cli_status() -> CodexCliStatus {
         })
 }
 
+/// Return the model catalog maintained by the signed-in Codex CLI. Codex's
+/// app-server refreshes this cache for the active account; reading it avoids a
+/// model invocation and therefore consumes no subscription allowance.
+pub async fn list_available_models() -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(list_available_models_blocking)
+        .await
+        .map_err(|_| "Codex model discovery worker stopped unexpectedly".to_string())?
+}
+
+fn list_available_models_blocking() -> Result<Vec<String>, String> {
+    let cache_path = codex_home()
+        .map(|home| home.join("models_cache.json"))
+        .ok_or_else(|| "Codex home directory could not be resolved".to_string())?;
+    let cache = fs::read_to_string(cache_path).map_err(|_| {
+        "Codex model catalog is not available yet; open Codex once and retry".to_string()
+    })?;
+    let cache: CodexModelCache = serde_json::from_str(&cache)
+        .map_err(|_| "Codex model catalog could not be read".to_string())?;
+
+    let mut models = cache
+        .models
+        .into_iter()
+        .filter(|model| model.visibility != "hide")
+        .map(|model| model.slug)
+        .filter(|slug| !slug.trim().is_empty())
+        .collect::<Vec<_>>();
+    let mut seen = HashSet::new();
+    models.retain(|model| seen.insert(model.clone()));
+    models.sort_by_key(|model| model != crate::settings::CODEX_CLI_DEFAULT_MODEL_ID);
+    Ok(models)
+}
+
+fn codex_home() -> Option<PathBuf> {
+    std::env::var_os("CODEX_HOME")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| {
+            #[cfg(target_os = "windows")]
+            let home = std::env::var_os("USERPROFILE");
+            #[cfg(not(target_os = "windows"))]
+            let home = std::env::var_os("HOME");
+            home.map(|path| PathBuf::from(path).join(".codex"))
+        })
+}
+
 fn polish_transcription_blocking(
     cleanup_instructions: &str,
     transcript: &str,
@@ -275,7 +333,7 @@ fn polish_args(schema_path: &Path, output_path: &Path, model: &str) -> Vec<OsStr
         OsString::from("-c"),
         OsString::from("approval_policy=\"never\""),
         OsString::from("-c"),
-        OsString::from("model_reasoning_effort=\"low\""),
+        OsString::from("model_reasoning_effort=\"none\""),
         OsString::from("-c"),
         OsString::from("web_search=\"disabled\""),
         OsString::from("--output-schema"),
@@ -515,7 +573,7 @@ mod tests {
         assert!(rendered.contains(&"--ignore-rules".to_string()));
         assert!(rendered.contains(&"forced_login_method=\"chatgpt\"".to_string()));
         assert!(rendered.contains(&"approval_policy=\"never\"".to_string()));
-        assert!(rendered.contains(&"model_reasoning_effort=\"low\"".to_string()));
+        assert!(rendered.contains(&"model_reasoning_effort=\"none\"".to_string()));
         assert!(rendered.contains(&"web_search=\"disabled\"".to_string()));
         assert_eq!(rendered.last().map(String::as_str), Some("-"));
     }
@@ -545,6 +603,30 @@ mod tests {
         );
         assert!(parse_polish_output("Hello, world.").is_err());
         assert!(parse_polish_output(r#"{"transcription":"  "}"#).is_err());
+    }
+
+    #[test]
+    fn visible_models_put_cleanup_recommendation_first() {
+        let cache: CodexModelCache = serde_json::from_str(
+            r#"{"models":[
+                {"slug":"gpt-5.6-sol","visibility":"list"},
+                {"slug":"gpt-reserve","visibility":"hide"},
+                {"slug":"gpt-5.6-luna","visibility":"list"},
+                {"slug":"gpt-5.6-sol","visibility":"list"}
+            ]}"#,
+        )
+        .unwrap();
+        let mut models = cache
+            .models
+            .into_iter()
+            .filter(|model| model.visibility != "hide")
+            .map(|model| model.slug)
+            .collect::<Vec<_>>();
+        let mut seen = HashSet::new();
+        models.retain(|model| seen.insert(model.clone()));
+        models.sort_by_key(|model| model != crate::settings::CODEX_CLI_DEFAULT_MODEL_ID);
+
+        assert_eq!(models, vec!["gpt-5.6-luna", "gpt-5.6-sol"]);
     }
 
     #[test]

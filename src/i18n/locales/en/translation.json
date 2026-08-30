@@ -17,7 +17,7 @@
     "general": "General",
     "models": "Models",
     "advanced": "Advanced",
-    "postProcessing": "Post Process",
+    "postProcessing": "Post Processing",
     "history": "History",
     "debug": "Debug",
     "about": "About"
@@ -450,6 +450,7 @@
           "description": "Choose how polished dictation is cleaned up. Use the local or OpenAI-compatible option for Ollama, LM Studio, and other compatible servers.",
           "source": "Connection",
           "codexConnection": "Local Codex CLI, authenticated with OpenAI",
+          "customCliConnection": "Local command-line provider",
           "appleConnection": "On-device Apple Intelligence"
         },
         "codex": {
@@ -461,6 +462,25 @@
           "error": "LocalDictate could not verify Codex. Raw dictation still works.",
           "privacy": "Raw dictation stays on this PC. Polished dictation sends only the transcript and cleanup instructions to OpenAI through your signed-in Codex CLI. If cleanup fails, LocalDictate pastes the raw transcript.",
           "refresh": "Check again"
+        },
+        "customCli": {
+          "checking": "Checking the custom CLI…",
+          "ready": "Ready — the configured executable is available.",
+          "notConfigured": "Enter a CLI executable or binary path to connect it.",
+          "notInstalled": "The configured CLI executable was not found.",
+          "error": "LocalDictate could not run this CLI's version check. Verify the binary path; raw dictation still works.",
+          "contract": "LocalDictate starts one isolated, non-interactive process per cleanup. It sends the cleanup request over stdin and reads plain cleaned text from stdout. Authentication stays with the CLI. Arguments are passed directly without transcript interpolation; enter one argument per line.",
+          "refresh": "Check again",
+          "executable": {
+            "title": "Binary path",
+            "description": "Executable name on PATH or the full path to the CLI binary.",
+            "placeholder": "claude, gemini, opencode, or C:\\path\\to\\tool.exe"
+          },
+          "arguments": {
+            "title": "Arguments",
+            "description": "Optional non-interactive arguments, one per line. Configure the CLI to read its prompt from stdin and print only the final text to stdout.",
+            "placeholder": "--print\n--model\nfast-model"
+          }
         },
         "appleIntelligence": {
           "unavailable": "Apple Intelligence is not available on this device. Requires an Apple Silicon Mac running macOS Tahoe (26.0) or later with Apple Intelligence enabled in System Settings."
@@ -477,13 +497,14 @@
         },
         "model": {
           "title": "Model",
-          "descriptionCodex": "Use your Codex subscription default or enter any model identifier supported by your installed Codex CLI.",
+          "descriptionCodex": "Models are read from the signed-in Codex account. GPT-5.6 Luna is recommended for fast, high-volume transcript cleanup and runs with reasoning disabled.",
           "descriptionCustom": "Provide the model identifier expected by your custom endpoint.",
           "descriptionDefault": "Choose a model exposed by the selected provider.",
-          "placeholderCodex": "subscription_default or a Codex model ID",
+          "placeholderCodex": "Select an available Codex model",
           "placeholderWithOptions": "Search or select a model",
           "placeholderNoOptions": "Type a model name",
-          "refreshModels": "Refresh models"
+          "refreshModels": "Refresh models",
+          "recommendedOption": "{{model}} — Recommended for cleanup"
         }
       },
       "prompts": {
@@ -797,8 +818,8 @@
   },
   "themePacks": {
     "appearanceTitle": "Appearance",
-    "title": "Theme Packs",
-    "description": "Discover and manage visual overlay packs and bundled presets.",
+    "title": "Recording Display",
+    "description": "Choose between the Classic widget and Pirate Scribe.",
     "loading": "Loading theme packs…",
     "count_one": "{{count}} theme available",
     "count_other": "{{count}} themes available",
@@ -812,8 +833,8 @@
     "dimensions": "{{width}} × {{height}}",
     "importDialogTitle": "Choose a theme pack directory",
     "preset": {
-      "title": "Theme packs are one-time presets",
-      "description": "Applying a pack can change its overlay, app appearance, accent, and cleanup profile. Afterward, every setting remains independent and editable; the pack will not silently reapply itself."
+      "title": "Display presets are applied once",
+      "description": "Pirate Scribe can change the overlay, appearance, accent, and cleanup profile. Each setting remains independently editable afterward."
     },
     "metadata": {
       "renderer": "Renderer",

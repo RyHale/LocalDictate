@@ -23,7 +23,8 @@ use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
     self, get_settings, AutoSubmitKey, ClipboardHandling, KeyboardImplementation, LLMPrompt,
     OverlayPosition, OverlayStyle, PasteMethod, ShortcutBinding, Theme, ThemeAccent, TypingTool,
-    UiFontSize, VadBackend, WidgetAnimation, APPLE_INTELLIGENCE_PROVIDER_ID,
+    UiFontSize, VadBackend, WidgetAnimation, APPLE_INTELLIGENCE_PROVIDER_ID, CODEX_CLI_PROVIDER_ID,
+    CUSTOM_CLI_PROVIDER_ID,
 };
 use crate::tray;
 
@@ -1111,6 +1112,30 @@ pub fn change_post_process_model_setting(
 
 #[tauri::command]
 #[specta::specta]
+pub fn change_post_process_cli_executable_setting(
+    app: AppHandle,
+    executable: String,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.post_process_cli_executable = executable.trim().to_string();
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_post_process_cli_arguments_setting(
+    app: AppHandle,
+    args: String,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.post_process_cli_arguments = args;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn set_post_process_provider(app: AppHandle, provider_id: String) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     validate_provider_exists(&settings, &provider_id)?;
@@ -1220,6 +1245,14 @@ pub async fn fetch_post_process_models(
         {
             return Err("Apple Intelligence is only available on Apple silicon Macs running macOS 15 or later.".to_string());
         }
+    }
+
+    if provider.id == CODEX_CLI_PROVIDER_ID {
+        return crate::codex_cli::list_available_models().await;
+    }
+
+    if provider.id == CUSTOM_CLI_PROVIDER_ID {
+        return Ok(Vec::new());
     }
 
     // Get API key

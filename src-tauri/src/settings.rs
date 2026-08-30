@@ -10,7 +10,9 @@ use tauri_plugin_store::StoreExt;
 pub const APPLE_INTELLIGENCE_PROVIDER_ID: &str = "apple_intelligence";
 pub const APPLE_INTELLIGENCE_DEFAULT_MODEL_ID: &str = "Apple Intelligence";
 pub const CODEX_CLI_PROVIDER_ID: &str = "codex_cli";
-pub const CODEX_CLI_DEFAULT_MODEL_ID: &str = "subscription_default";
+pub const CODEX_CLI_DEFAULT_MODEL_ID: &str = "gpt-5.6-luna";
+pub const CUSTOM_CLI_PROVIDER_ID: &str = "custom_cli";
+pub const CUSTOM_CLI_DEFAULT_MODEL_ID: &str = "cli_default";
 pub const DEFAULT_TRANSCRIPTION_MODEL_ID: &str =
     "handy-computer/parakeet-unified-en-0.6b-gguf/parakeet-unified-en-0.6b-Q8_0.gguf";
 
@@ -467,6 +469,13 @@ pub struct AppSettings {
     pub post_process_prompts: Vec<LLMPrompt>,
     #[serde(default = "default_post_process_selected_prompt_id")]
     pub post_process_selected_prompt_id: Option<String>,
+    /// Executable and newline-delimited arguments for the generic CLI cleanup
+    /// adapter. The cleanup request is always delivered over stdin; transcript
+    /// text is never interpolated into a shell command or process arguments.
+    #[serde(default)]
+    pub post_process_cli_executable: String,
+    #[serde(default)]
+    pub post_process_cli_arguments: String,
     #[serde(default)]
     pub mute_while_recording: bool,
     #[serde(default)]
@@ -678,6 +687,14 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             supports_structured_output: true,
         },
         PostProcessProvider {
+            id: CUSTOM_CLI_PROVIDER_ID.to_string(),
+            label: "Custom CLI".to_string(),
+            base_url: "cli://local".to_string(),
+            allow_base_url_edit: false,
+            models_endpoint: None,
+            supports_structured_output: false,
+        },
+        PostProcessProvider {
             id: "openai".to_string(),
             label: "OpenAI".to_string(),
             base_url: "https://api.openai.com/v1".to_string(),
@@ -777,6 +794,9 @@ fn default_post_process_api_keys() -> SecretMap {
 fn default_model_for_provider(provider_id: &str) -> String {
     if provider_id == CODEX_CLI_PROVIDER_ID {
         return CODEX_CLI_DEFAULT_MODEL_ID.to_string();
+    }
+    if provider_id == CUSTOM_CLI_PROVIDER_ID {
+        return CUSTOM_CLI_DEFAULT_MODEL_ID.to_string();
     }
     if provider_id == APPLE_INTELLIGENCE_PROVIDER_ID {
         return APPLE_INTELLIGENCE_DEFAULT_MODEL_ID.to_string();
@@ -920,7 +940,10 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
         let default_model = default_model_for_provider(&provider.id);
         match settings.post_process_models.get_mut(&provider.id) {
             Some(existing) => {
-                if existing.is_empty() && !default_model.is_empty() {
+                let uses_retired_codex_default =
+                    provider.id == CODEX_CLI_PROVIDER_ID && existing == "subscription_default";
+                if (existing.is_empty() || uses_retired_codex_default) && !default_model.is_empty()
+                {
                     *existing = default_model.clone();
                     changed = true;
                 }
@@ -1040,6 +1063,8 @@ pub fn get_default_settings() -> AppSettings {
         post_process_models: default_post_process_models(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: default_post_process_selected_prompt_id(),
+        post_process_cli_executable: String::new(),
+        post_process_cli_arguments: String::new(),
         mute_while_recording: false,
         append_trailing_space: false,
         app_language: default_app_language(),
@@ -1313,6 +1338,7 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
 
     #[test]
     fn model_unload_timeout_contract_round_trips_every_option() {
@@ -1689,6 +1715,37 @@ mod tests {
                 .map(String::as_str),
             Some(CODEX_CLI_DEFAULT_MODEL_ID)
         );
+    }
+
+    #[test]
+    fn default_cleanup_catalog_keeps_documented_connections_available() {
+        let providers = default_post_process_providers();
+        let expected = [
+            (CODEX_CLI_PROVIDER_ID, "codex-cli://local"),
+            (CUSTOM_CLI_PROVIDER_ID, "cli://local"),
+            ("openai", "https://api.openai.com/v1"),
+            ("zai", "https://api.z.ai/api/paas/v4"),
+            ("openrouter", "https://openrouter.ai/api/v1"),
+            ("anthropic", "https://api.anthropic.com/v1"),
+            ("groq", "https://api.groq.com/openai/v1"),
+            ("cerebras", "https://api.cerebras.ai/v1"),
+            (
+                "bedrock_mantle",
+                "https://bedrock-mantle.us-east-1.api.aws/v1",
+            ),
+            ("custom", "http://localhost:11434/v1"),
+        ];
+
+        for (id, base_url) in expected {
+            let provider = providers
+                .iter()
+                .find(|provider| provider.id == id)
+                .unwrap_or_else(|| panic!("documented cleanup provider is missing: {id}"));
+            assert_eq!(provider.base_url, base_url, "unexpected base URL for {id}");
+        }
+
+        let unique_ids: HashSet<_> = providers.iter().map(|provider| &provider.id).collect();
+        assert_eq!(unique_ids.len(), providers.len());
     }
 
     #[cfg(not(target_os = "linux"))]

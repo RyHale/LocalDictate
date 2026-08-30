@@ -8,6 +8,7 @@ use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::TranscriptionManager;
 use crate::settings::{
     get_settings, AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID, CODEX_CLI_PROVIDER_ID,
+    CUSTOM_CLI_PROVIDER_ID,
 };
 use crate::shortcut;
 use crate::tray::{set_tray_state, TrayIconState};
@@ -199,6 +200,33 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
             Err(error) => {
                 error!(
                     "Codex CLI post-processing failed: {}. Falling back to the raw transcription.",
+                    error
+                );
+                None
+            }
+        };
+    }
+
+    if provider.id == CUSTOM_CLI_PROVIDER_ID {
+        return match crate::custom_cli::polish_transcription(
+            &settings.post_process_cli_executable,
+            &settings.post_process_cli_arguments,
+            &prompt,
+            transcription,
+        )
+        .await
+        {
+            Ok(content) => {
+                let content = strip_invisible_chars(&content);
+                debug!(
+                    "Custom CLI post-processing succeeded. Output length: {} chars",
+                    content.len()
+                );
+                Some(content)
+            }
+            Err(error) => {
+                error!(
+                    "Custom CLI post-processing failed: {}. Falling back to the raw transcription.",
                     error
                 );
                 None
