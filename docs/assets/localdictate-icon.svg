@@ -1,0 +1,19 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 40 40"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">LocalDictate</title>
+  <desc id="description">
+    A five-bar voice waveform inside a rounded blue square.
+  </desc>
+  <rect x="1" y="1" width="38" height="38" rx="11" fill="#008fd5" />
+  <path
+    d="M10 22v-4m5 9V13m5 18V9m5 18V13m5 9v-4"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+</svg>
