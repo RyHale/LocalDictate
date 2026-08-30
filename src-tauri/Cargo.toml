@@ -1,6 +1,6 @@
 [package]
 name = "localdictate"
-version = "0.1.2"
+version = "0.1.3"
 description = "Local-first Windows dictation with on-device speech recognition"
 authors = ["Ryan"]
 edition = "2021"
